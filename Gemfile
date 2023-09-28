@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 source 'https://rubygems.org'
 git_source(:github) { |_repo| "https://github.com/#{repo}.git" }
 
@@ -18,6 +20,8 @@ gem 'tzinfo-data', '1.2022', platforms: %i[mingw mswin x64_mingw jruby]
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
+  gem 'brakeman', '5.4.1'
+  gem 'bundler-audit', '0.9.1'
   gem 'byebug', '11.1.3'
   gem 'colorize', '0.8.1', require: nil
   gem 'factory_bot_rails', '6.2'
@@ -30,8 +34,7 @@ group :development, :test do
   gem 'rubocop-performance', '1.16.0 ', require: false
   gem 'rubocop-rails', '2.18.0', require: false
   gem 'rubocop-rspec', '2.19.0', require: false
-  gem 'brakeman', '5.4.1'
-  gem 'bundler-audit', '0.9.1'
+  gem 'rubocop-factory_bot', '2.24'
   gem 'ruby_audit', '2.2.0'
 end
 

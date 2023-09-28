@@ -1,0 +1,385 @@
+require:
+  - "rubocop-capybara"
+  - "rubocop-performance"
+  - "rubocop-rails"
+  - "rubocop-rspec"
+  - "rubocop-factory_bot"
+
+AllCops:
+  DefaultFormatter: fuubar
+  DisplayStyleGuide: true
+  ExtraDetails: true
+  NewCops: enable
+  SuggestExtensions: true
+  Exclude:
+    - 'bin/*'
+    - 'db/migrate/*'
+    - 'db/schema.rb'
+
+inherit_mode:
+  merge:
+    - 'AllowedNames'
+    - 'Exclude'
+
+Layout:
+  Exclude:
+    - 'config/**/*'
+
+Bundler/OrderedGems:
+  Enabled: false
+
+Layout/BlockAlignment:
+  EnforcedStyleAlignWith: start_of_block
+
+Layout/ExtraSpacing:
+  AllowForAlignment: false
+
+Layout/FirstArgumentIndentation:
+  EnforcedStyle: consistent
+
+Layout/FirstArrayElementIndentation:
+  EnforcedStyle: consistent
+
+Layout/FirstArrayElementLineBreak:
+  Enabled: true
+
+Layout/FirstHashElementIndentation:
+  EnforcedStyle: consistent
+
+Layout/FirstHashElementLineBreak:
+  Enabled: true
+
+Layout/FirstMethodArgumentLineBreak:
+  Enabled: true
+
+Layout/FirstMethodParameterLineBreak:
+  Enabled: true
+
+Layout/HeredocArgumentClosingParenthesis:
+  Enabled: true
+
+Layout/LineLength:
+  Max: 120
+  Exclude:
+  - "**/Gemfile"
+  - "**/*_spec.rb"
+  - "config/initializers/inflections.rb"
+  AllowedPatterns:
+  - "^require \".+\"$"
+  - "\".{30,}\",?$"
+  - "'.{30,}',?$"
+  - "\\w{80,},?$"
+  - "^\\s+def "
+  - "^\\s+#"
+  - " # .{30,}$"
+  - "\\s+\\w+ = /.*/.freeze$"
+
+Layout/TrailingEmptyLines:
+  Enabled: false
+
+Layout/MultilineAssignmentLayout:
+  Enabled: true
+
+Layout/MultilineHashKeyLineBreaks:
+  Enabled: true
+
+Layout/MultilineMethodArgumentLineBreaks:
+  Enabled: true
+
+Layout/MultilineMethodCallIndentation:
+  EnforcedStyle: indented
+
+Layout/MultilineMethodDefinitionBraceLayout:
+  EnforcedStyle: new_line
+
+Layout/SpaceAroundOperators:
+  AllowForAlignment: false
+
+Layout/SpaceBeforeFirstArg:
+  AllowForAlignment: false
+
+Lint/AmbiguousBlockAssociation:
+  Enabled: false # TODO: habilitar, achei 'bug'. usamos expect {}.to change {}  e attribute :name, Types::String.constructor {}
+
+Lint/DuplicateBranch:
+  IgnoreLiteralBranches: true
+  IgnoreConstantBranches: true
+
+Lint/HeredocMethodCallPosition:
+  Enabled: true
+
+Lint/UnusedMethodArgument:
+  AutoCorrect: false
+  Exclude:
+    - 'app/controllers/**/*'
+
+Lint/Void:
+  Exclude:
+    - 'app/controllers/**/*'
+
+Metrics: # habilitado apenas no Code Climate
+  Enabled: false
+
+Naming/MethodParameterName:
+  AllowedNames:
+    - '_'
+    - 'de'
+    - 'ir'
+    - 'uf'
+
+# Naming/VariableNumber:
+#   Enabled: false # usamos nf1, registro_0000, registro_J215 e outras variações
+
+Performance/CollectionLiteralInLoop:
+  Exclude:
+    - "**/*_spec.rb"
+
+# Rails/Date:
+#   Enabled: false
+
+# Rails/Delegate:
+#   Enabled: false
+
+# Rails/Pluck:
+#   Enabled: false
+
+# Rails/SkipsModelValidations:
+#   Enabled: false
+
+# Rails/TimeZone:
+#   Enabled: false
+
+# RSpec/ContextWording:
+#   Enabled: false
+
+RSpec/ExampleLength:
+  Enabled: false
+
+# RSpec/ExpectInHook:
+#   Enabled: false
+
+# RSpec/MessageSpies:
+#   Enabled: false # TODO: estudar melhor
+
+RSpec/MultipleExpectations:
+  Enabled: false
+
+# RSpec/MultipleMemoizedHelpers:
+#   Enabled: false
+
+# RSpec/NamedSubject:
+#   Enabled: false
+
+# RSpec/NestedGroups:
+#   Enabled: false
+
+# RSpec/StubbedMock:
+#   Enabled: false # TODO: habilitar
+
+Style:
+  Exclude:
+    - 'config/**/*'
+
+Style/ArrayCoercion:
+  Enabled: true
+
+Style/AsciiComments:
+  Enabled: false
+
+Style/AutoResourceCleanup:
+  Enabled: true
+
+Style/BlockDelimiters:
+  Enabled: false
+
+Style/CollectionMethods:
+  Enabled: true
+
+Style/Documentation:
+  Enabled: false
+
+# Style/DocumentDynamicEvalDefinition:
+#   Exclude:
+#   - app/controllers/pessoal_controller.rb
+
+Style/FrozenStringLiteralComment:
+  Enabled: false
+
+Style/GuardClause:
+  Details: "\n\nCuidado para não mudar a regra. Evite mudar código antigo sem necessidade.\n\n"
+
+Style/HashLikeCase:
+  Enabled: false
+
+Style/HashSyntax:
+  EnforcedStyle: ruby19_no_mixed_keys
+
+Style/IfUnlessModifier:
+  Enabled: false
+
+Style/ImplicitRuntimeError:
+  Enabled: true
+
+Style/NegatedIf:
+  Enabled: false
+
+Style/Next:
+  Details: "\n\nCuidado para não mudar a regra. Evite mudar código antigo sem necessidade.\n\n"
+
+Style/NumericPredicate:
+  Enabled: false
+
+Style/ReturnNil:
+  Enabled: true
+
+Style/SafeNavigation:
+  AutoCorrect: false
+  Details: "\n\nTente resolver sem utilizar `&.`\n\n"
+
+# Style/StringLiterals:
+#   EnforcedStyle: double_quotes
+
+# Style/StringLiteralsInInterpolation:
+#   EnforcedStyle: double_quotes
+
+Style/TrailingCommaInArguments:
+  EnforcedStyleForMultiline: consistent_comma
+
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: consistent_comma
+
+Style/TrailingCommaInHashLiteral:
+  EnforcedStyleForMultiline: consistent_comma
+
+### rubocop
+
+# version 1.10
+Style/HashConversion:
+  Enabled: false
+
+# version 1.18
+Layout/LineEndStringConcatenationIndentation:
+  Enabled: false
+Naming/InclusiveLanguage:
+  Enabled: false
+
+# version 1.19
+Lint/AmbiguousRange:
+  Enabled: false
+Style/RedundantSelfAssignmentBranch:
+  Enabled: false
+
+# version 1.21
+Lint/AmbiguousOperatorPrecedence:
+  Enabled: false
+
+# version 1.22
+Security/IoMethods:
+  Enabled: false
+Style/SelectByRegexp:
+  Enabled: false
+
+# version 1.23
+Style/OpenStructUse:
+  Enabled: false
+
+# version 1.24
+Style/FileRead:
+  Enabled: false
+Style/FileWrite:
+  Enabled: false
+Style/MapToHash:
+  Enabled: false
+
+# version 1.27
+Style/RedundantInitialize:
+  Enabled: false
+
+# version 1.28
+Performance/RedundantEqualityComparisonBlock:
+  Enabled: false
+Style/FetchEnvVar:
+  Enabled: false
+
+### rubocop-performance
+
+# version 1.11
+Performance/MapCompact:
+  Enabled: false
+
+# version 1.13
+Performance/BigDecimalWithNumericArgument:
+  Enabled: false
+
+Performance/StringIdentifierArgument:
+  Enabled: false
+
+### rubocop-rails
+#
+Rails/HelperInstanceVariable:
+  Enabled: false
+  
+# version 2.10
+Rails/EnvironmentVariableAccess:
+  Enabled: false
+
+# version 2.11
+Rails/ExpandedDateRange:
+  Enabled: false
+
+# version 2.13
+Rails/CompactBlank:
+  Enabled: false
+Rails/RedundantPresenceValidationOnBelongsTo:
+  Enabled: false
+
+# version 2.14
+Rails/I18nLocaleTexts:
+  Enabled: false
+
+### rubocop-rspec
+
+# version 2.4.0
+RSpec/IdenticalEqualityAssertion:
+  Enabled: false
+
+RSpec/Rails/AvoidSetupHook:
+  Enabled: false
+
+# version 2.5.0
+RSpec/ExcessiveDocstringSpacing:
+  Enabled: false
+
+RSpec/SubjectDeclaration:
+  Enabled: false
+
+# version 2.7.0
+RSpec/FactoryBot/SyntaxMethods:
+  Enabled: false
+
+# version 2.9.0
+RSpec/BeEq:
+  Enabled: false
+RSpec/BeNil:
+  Enabled: false
+
+# version 2.10.0
+RSpec/VerifiedDoubleReference:
+  Enabled: false
+
+# version 2.11.0
+RSpec/ChangeByZero:
+  Enabled: false
+RSpec/ExpectChange:
+  Enabled: false
+
+# version 2.13.1
+RSpec/NoExpectationExample:
+  Enabled: false
+
+# version 2.14
+RSpec/FactoryBot/ConsistentParenthesesStyle:
+  Enabled: false
+
+RSpec/Rails/InferredSpecType:
+  Enabled: false

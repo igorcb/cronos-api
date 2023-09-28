@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class LineCoverage
   def self.local_coverage
     SimpleCov.result.files.map.to_h do |file|
