@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_09_28_155251) do
+ActiveRecord::Schema[7.0].define(version: 2023_09_28_214442) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -21,4 +21,14 @@ ActiveRecord::Schema[7.0].define(version: 2023_09_28_155251) do
     t.index ["name"], name: "index_companies_on_name", unique: true
   end
 
+  create_table "softwares", force: :cascade do |t|
+    t.bigint "company_id", null: false
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "name"], name: "idx_softwares_on_company_id_and_name_uniq", unique: true
+    t.index ["company_id"], name: "index_softwares_on_company_id"
+  end
+
+  add_foreign_key "softwares", "companies"
 end
