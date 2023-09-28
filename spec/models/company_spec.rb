@@ -4,6 +4,7 @@ RSpec.describe Company, type: :model do
   subject(:company) { described_class.new(name: 'Anything') }
 
   it { is_expected.to respond_to(:name) }
+  it { is_expected.to have_many(:softwares) }
 
   it 'is valid with valid attributes' do
     expect(company.valid?).to be(true)
