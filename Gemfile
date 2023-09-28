@@ -36,6 +36,7 @@ group :development, :test do
   gem 'rubocop-rspec', '2.19.0', require: false
   gem 'rubocop-factory_bot', '2.24'
   gem 'rails-controller-testing', '1.0.5'
+  gem 'shoulda-matchers', '5.3'
   gem 'ruby_audit', '2.2.0'
 end
 
