@@ -9,4 +9,9 @@ class WelcomeController < ApplicationController
     @compaines = Company.order(:name)
     render json: @compaines.to_json, status: :ok
   end
+
+  def softwares
+    @softwares = Software.includes(:company).order('companies.name, softwares.name')
+    render json: @softwares.to_json, status: :ok
+  end
 end
