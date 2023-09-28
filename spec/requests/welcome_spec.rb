@@ -38,4 +38,23 @@ RSpec.describe 'Welcome', type: :request do
       expect(response_json[0]['name']).to eq(company.name)
     end
   end
+
+  describe 'GET /softwares' do
+    it 'returns http success' do
+      get '/softwares'
+
+      expect(response).to have_http_status(:success)
+    end
+
+    it 'display all softwares' do
+      company = Company.create!(name: 'Company Example')
+      software = company.softwares.create(name: 'Software Example')
+
+      get '/softwares'
+
+      response_json = response.parsed_body
+      expect(response_json[0]['company_id']).to eq(company.id)
+      expect(response_json[0]['name']).to eq(software.name)
+    end
+  end
 end
