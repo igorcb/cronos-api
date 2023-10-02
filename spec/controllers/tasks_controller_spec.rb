@@ -2,37 +2,8 @@ require 'rails_helper'
 
 RSpec.describe TasksController, type: :controller do
   describe 'GET /tasks' do
-    subject(:task) {
-      described_class.new(task_params_valid)
-    }
-
-    let(:company) { create(:company) }
-    let(:software) { company.softwares.create(name: 'Software Example') }
-
-    let(:task_params_invalid) {
-      {
-        company: nil,
-        software: nil,
-        code: nil,
-        name: nil,
-        date_opened: nil,
-        status: nil,
-      }
-    }
-
-    let(:task_params_valid) {
-      {
-        company:,
-        software:,
-        code: '1025',
-        name: 'Anything',
-        description: 'Laborum et culpa veniam laboris voluptate',
-        date_opened: '2023-10-01',
-        status: :opened,
-        date_delivered: Date.current,
-        observation: 'Eiusmod irure est veniam commodo reprehenderit',
-      }
-    }
+    let!(:company) { create(:company) }
+    let(:software) { create(:software, company:, name: 'Software Example') }
 
     let(:task_one) {
       {
@@ -42,7 +13,7 @@ RSpec.describe TasksController, type: :controller do
         name: 'Anything',
         description: 'Laborum et culpa veniam laboris voluptate',
         date_opened: '2023-10-01',
-        status: 0, # Task.statuses[:opened],
+        status: Task.statuses[:opened],
         date_delivered: Date.current,
         observation: 'Eiusmod irure est veniam commodo reprehenderit',
       }
@@ -62,13 +33,23 @@ RSpec.describe TasksController, type: :controller do
       }
     }
 
+    let(:task_params_invalid) {
+      {
+        company: nil,
+        software: nil,
+        code: nil,
+        name: nil,
+        date_opened: nil,
+        status: nil,
+      }
+    }
+
     it 'returns all tasks order date_opened desc' do
       create(:task, task_one)
       create(:task, task_two)
 
       get :index
       response_body = response.parsed_body
-
       expect(response_body.size).to eq(2)
       expect(response_body[0]['date_opened']).to eq('2023-10-02')
       expect(response_body[1]['date_opened']).to eq('2023-10-01')
@@ -80,7 +61,6 @@ RSpec.describe TasksController, type: :controller do
       expect(response).to have_http_status(:unprocessable_entity)
 
       response_body = response.parsed_body
-
       expect(response_body).to include('company' => ['must exist'])
       expect(response_body).to include('software' => ['must exist'])
       expect(response_body).to include('name' => ["can't be blank"])
@@ -90,13 +70,14 @@ RSpec.describe TasksController, type: :controller do
     end
 
     it 'when params valid return success' do
-      company = create(:company, name: 'Example - 01')
-      software = create(:software, company_id: company.id)
+      company = create(:company, name: 'Company Example')
+      software = create(:software, company:, name: 'Software Example ')
 
-      task_params_valid[:company_id] = company.id
-      task_params_valid[:software_id] = software.id
+      task_one[:company_id] = company.id
+      task_one[:software_id] = software.id
+      task_one[:status] = :opened
 
-      post :create, params: { task: task_params_valid }
+      post :create, params: { task: task_one }
 
       expect(response).to have_http_status(:created)
       expect(response.body).not_to include('hasErrors')
