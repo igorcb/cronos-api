@@ -1,0 +1,111 @@
+require 'rails_helper'
+
+RSpec.describe TasksController, type: :controller do
+  describe 'GET /tasks' do
+    subject(:task) {
+      described_class.new(task_params_valid)
+    }
+
+    let(:company) { create(:company) }
+    let(:software) { company.softwares.create(name: 'Software Example') }
+
+    let(:task_params_invalid) {
+      {
+        company: nil,
+        software: nil,
+        code: nil,
+        name: nil,
+        date_opened: nil,
+        status: nil,
+      }
+    }
+
+    let(:task_params_valid) {
+      {
+        company:,
+        software:,
+        code: '1025',
+        name: 'Anything',
+        description: 'Laborum et culpa veniam laboris voluptate',
+        date_opened: '2023-10-01',
+        status: :opened,
+        date_delivered: Date.current,
+        observation: 'Eiusmod irure est veniam commodo reprehenderit',
+      }
+    }
+
+    let(:task_one) {
+      {
+        company:,
+        software:,
+        code: '1025',
+        name: 'Anything',
+        description: 'Laborum et culpa veniam laboris voluptate',
+        date_opened: '2023-10-01',
+        status: 0, # Task.statuses[:opened],
+        date_delivered: Date.current,
+        observation: 'Eiusmod irure est veniam commodo reprehenderit',
+      }
+    }
+
+    let(:task_two) {
+      {
+        company:,
+        software:,
+        code: '1026',
+        name: 'Anything',
+        description: 'Laborum et culpa veniam laboris voluptate',
+        date_opened: '2023-10-02',
+        status: Task.statuses[:opened],
+        date_delivered: Date.current,
+        observation: 'Eiusmod irure est veniam commodo reprehenderit',
+      }
+    }
+
+    it 'returns all tasks order date_opened desc' do
+      create(:task, task_one)
+      create(:task, task_two)
+
+      get :index
+      response_body = response.parsed_body
+
+      expect(response_body.size).to eq(2)
+      expect(response_body[0]['date_opened']).to eq('2023-10-02')
+      expect(response_body[1]['date_opened']).to eq('2023-10-01')
+    end
+
+    it 'when params invalid return unprocessable_entity' do
+      post :create, params: { task: task_params_invalid }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+
+      response_body = response.parsed_body
+
+      expect(response_body).to include('company' => ['must exist'])
+      expect(response_body).to include('software' => ['must exist'])
+      expect(response_body).to include('name' => ["can't be blank"])
+      expect(response_body).to include('date_opened' => ["can't be blank"])
+      expect(response_body).to include('status' => ["can't be blank"])
+      expect(response_body).to include('code' => ["can't be blank"])
+    end
+
+    it 'when params valid return success' do
+      company = create(:company, name: 'Example - 01')
+      software = create(:software, company_id: company.id)
+
+      task_params_valid[:company_id] = company.id
+      task_params_valid[:software_id] = software.id
+
+      post :create, params: { task: task_params_valid }
+
+      expect(response).to have_http_status(:created)
+      expect(response.body).not_to include('hasErrors')
+
+      response_body = response.parsed_body
+      expect(response_body['code']).to eq('1025')
+      expect(response_body['name']).to eq('Anything')
+      expect(response_body['date_opened']).to eq('2023-10-01')
+      expect(response_body['status']).to eq('opened')
+    end
+  end
+end
