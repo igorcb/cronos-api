@@ -8,4 +8,10 @@ class Task < ApplicationRecord
   validates :code, presence: true, uniqueness: { scope: %i[company_id software_id] }
 
   enum status: { opened: 0, finalized: 1, reopened: 2, delivered: 3 }
+
+  def update_status
+    return unless task_items.last&.finalized?
+
+    update(status: 'finalized')
+  end
 end
