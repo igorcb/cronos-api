@@ -40,6 +40,7 @@ RSpec.describe Task, type: :model do
   it { is_expected.to respond_to(:observation) }
   it { is_expected.to belong_to(:company) }
   it { is_expected.to belong_to(:software) }
+  it { is_expected.to have_many(:task_items) }
 
   it 'is valid with valid attributes' do
     expect(task.valid?).to be(true)
