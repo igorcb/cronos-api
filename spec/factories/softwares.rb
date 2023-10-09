@@ -1,6 +1,6 @@
 FactoryBot.define do
   factory :software do
-    company { nil }
-    name { 'MyString' }
+    company
+    name { |n| "Mystring_#{n}" }
   end
 end

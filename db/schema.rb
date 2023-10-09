@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_09_29_220300) do
+ActiveRecord::Schema[7.0].define(version: 2023_10_04_224336) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -28,6 +28,19 @@ ActiveRecord::Schema[7.0].define(version: 2023_09_29_220300) do
     t.datetime "updated_at", null: false
     t.index ["company_id", "name"], name: "idx_softwares_on_company_id_and_name_uniq", unique: true
     t.index ["company_id"], name: "index_softwares_on_company_id"
+  end
+
+  create_table "task_items", force: :cascade do |t|
+    t.bigint "task_id", null: false
+    t.date "date_start", null: false
+    t.time "hour_start", null: false
+    t.date "date_end"
+    t.time "hour_end"
+    t.integer "status", null: false
+    t.text "observation"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["task_id"], name: "index_task_items_on_task_id"
   end
 
   create_table "tasks", force: :cascade do |t|
@@ -48,6 +61,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_09_29_220300) do
   end
 
   add_foreign_key "softwares", "companies"
+  add_foreign_key "task_items", "tasks"
   add_foreign_key "tasks", "companies"
   add_foreign_key "tasks", "softwares"
 end

@@ -1,13 +1,13 @@
 FactoryBot.define do
   factory :task do
-    company { nil }
-    software { nil }
-    code { 'MyString' }
-    name { 'MyString' }
-    description { 'MyText' }
+    company
+    software
+    code { Faker::Number.number }
+    name { Faker::Lorem.sentence }
+    description { Faker::Lorem.paragraphs }
     date_opened { '2023-09-29' }
     status { 1 }
     date_delivered { '2023-09-29' }
-    observation { 'MyText' }
+    observation { Faker::Lorem.paragraphs }
   end
 end
