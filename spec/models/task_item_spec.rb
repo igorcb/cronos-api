@@ -8,7 +8,7 @@ RSpec.describe TaskItem, type: :model do
       hour_start: Time.zone.parse('15:30:00'),
       date_end: '2023-10-04',
       hour_end: Time.zone.parse('16:30:00'),
-      status: 1,
+      status: described_class.statuses[:pending],
       observation: 'Culpa id culpa id dolor nostrud labore aute et qui eiusmod proident id.',
     )
   }
@@ -46,5 +46,20 @@ RSpec.describe TaskItem, type: :model do
   it 'is not valid without a status' do
     task_item.status = nil
     expect(task_item.valid?).to be(false)
+  end
+
+  it 'validates that the status is pending' do
+    task.status = described_class.statuses[:pending]
+    expect(task.valid?).to be(true)
+  end
+
+  it 'validates that the status is finalized' do
+    task.status = described_class.statuses[:finalized]
+    expect(task.valid?).to be(true)
+  end
+
+  it 'validates that the status is not pending, finalized' do
+    task.status = described_class.statuses[:other]
+    expect(task.valid?).not_to be(true)
   end
 end
