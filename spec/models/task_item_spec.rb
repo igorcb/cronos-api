@@ -62,4 +62,68 @@ RSpec.describe TaskItem, type: :model do
     task.status = described_class.statuses[:other]
     expect(task.valid?).not_to be(true)
   end
+
+  it 'when without task item is finalized set the task status to opened' do
+    company = create(:company, name: 'Example Company')
+    software = company.softwares.create(name: 'Example Software')
+    task = create(
+      :task,
+      name: 'Example Task',
+      date_opened: Date.current,
+      status: Task.statuses[:opened],
+      company:,
+      software:,
+    )
+
+    expect(task.status).to eq('opened')
+
+    task.update_status
+    task.reload
+
+    expect(task.status).to eq('opened')
+  end
+
+  it 'when the status of the last task item is finalized set the task status to finalized' do
+    company = create(:company, name: 'Example Company')
+    software = company.softwares.create(name: 'Example Software')
+    task = create(
+      :task,
+      name: 'Example Task',
+      date_opened: Date.current,
+      status: Task.statuses[:opened],
+      company:,
+      software:,
+    )
+
+    create(:task_item, task:, status: Task.statuses[:finalized])
+
+    expect(task.status).to eq('finalized')
+
+    task.update_status
+    task.reload
+
+    expect(task.status).to eq('finalized')
+  end
+
+  it 'when the status of the last task item is pending set the task status to opened' do
+    company = create(:company, name: 'Example Company')
+    software = company.softwares.create(name: 'Example Software')
+    task = create(
+      :task,
+      name: 'Example Task',
+      date_opened: Date.current,
+      status: Task.statuses[:opened],
+      company:,
+      software:,
+    )
+
+    create(:task_item, task:, status: 'pending')
+
+    expect(task.status).to eq('opened')
+
+    task.update_status
+    task.reload
+
+    expect(task.status).to eq('opened')
+  end
 end
