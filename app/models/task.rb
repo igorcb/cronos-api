@@ -30,8 +30,8 @@ class Task < ApplicationRecord
       hour_start = task_item.hour_start
       hour_end = task_item.hour_end
 
-      start_time = format('%02d:%02d', hour_start.hour, hour_start.min)
-      end_time = format('%02d:%02d', hour_end.hour, hour_end.min)
+      start_time = format('%<hour>02d:%<minute>02d', hour: hour_start.hour, minute: hour_start.min)
+      end_time = format('%<hour>02d:%<minute>02d', hour: hour_end.hour, minute: hour_end.min)
 
       [start_time, end_time]
     end
