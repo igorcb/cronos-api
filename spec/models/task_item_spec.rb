@@ -14,6 +14,14 @@ RSpec.describe TaskItem, type: :model do
   }
 
   let(:task) { create(:task) }
+  let(:task_items_attributes) {
+    {
+      date_start: '2023-10-04',
+      hour_start: '2023-10-04 19:43:37',
+      date_end: '2023-10-04',
+      hour_end: '2023-10-04 19:47:37',
+    }
+  }
 
   it { is_expected.to respond_to(:task) }
   it { is_expected.to respond_to(:date_start) }
@@ -105,25 +113,28 @@ RSpec.describe TaskItem, type: :model do
     expect(task.status).to eq('finalized')
   end
 
-  it 'when the status of the last task item is pending set the task status to opened' do
-    company = create(:company, name: 'Example Company')
-    software = company.softwares.create(name: 'Example Software')
-    task = create(
-      :task,
-      name: 'Example Task',
-      date_opened: Date.current,
-      status: Task.statuses[:opened],
-      company:,
-      software:,
-    )
+  context 'when creating an item from a completed task' do
+    it 'must have a reopened task status' do
+      company = create(:company, name: 'Example Company')
+      software = company.softwares.create(name: 'Example Software')
+      task = create(
+        :task,
+        name: 'Example Task',
+        date_opened: Date.current,
+        status: Task.statuses[:opened],
+        company:,
+        software:,
+      )
 
-    create(:task_item, task:, status: 'pending')
+      task_items_attributes[:status] = described_class.statuses[:finalized]
+      task.task_items.create(task_items_attributes)
+      task.reload
 
-    expect(task.status).to eq('opened')
+      task_items_attributes[:status] = described_class.statuses[:pending]
+      task.task_items.create(task_items_attributes)
+      task.reload
 
-    task.update_status
-    task.reload
-
-    expect(task.status).to eq('opened')
+      expect(task.status).to eq('reopened')
+    end
   end
 end
