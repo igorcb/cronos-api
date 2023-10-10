@@ -108,4 +108,47 @@ RSpec.describe Task, type: :model do
     expect(software_duplicate.valid?).not_to be(true)
     expect(software_duplicate.errors[:code]).to include('has already been taken')
   end
+
+  it 'total hours of a task without item' do
+    task = described_class.create!(card)
+
+    expect(task.total_hours).to eq('00:00')
+  end
+
+  it 'total hours of a task with one item' do
+    task = described_class.create!(card)
+
+    task.task_items.create(
+      date_start: '2023-10-04',
+      hour_start: '2023-10-04 19:43:37',
+      date_end: '2023-10-04',
+      hour_end: '2023-10-04 19:47:37',
+      status: 'pending',
+      task:,
+    )
+
+    expect(task.total_hours).to eq('00:04')
+  end
+
+  it 'total hours of a task with more than one item' do
+    task = described_class.create!(card)
+
+    task.task_items.create(
+      date_start: '2023-10-04',
+      hour_start: '2023-10-04 19:43:37',
+      date_end: '2023-10-04',
+      hour_end: '2023-10-04 19:47:37',
+      status: 'pending',
+    )
+
+    task.task_items.create(
+      date_start: '2023-10-04',
+      hour_start: '2023-10-04 19:48:37',
+      date_end: '2023-10-04',
+      hour_end: '2023-10-04 20:11:37',
+      status: 'pending',
+    )
+
+    expect(task.total_hours).to eq('00:27')
+  end
 end

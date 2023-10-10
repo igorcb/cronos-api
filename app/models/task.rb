@@ -10,8 +10,30 @@ class Task < ApplicationRecord
   enum status: { opened: 0, finalized: 1, reopened: 2, delivered: 3 }
 
   def update_status
-    return unless task_items.last&.finalized?
+    return 'opened' if task_items.blank?
 
-    update(status: 'finalized')
+    if task_items.last.finalized?
+      update(status: 'finalized')
+    else
+      update(status: 'reopened')
+    end
+  end
+
+  def total_hours
+    CalculateHours.new.execute(extract_hours_task)
+  end
+
+  private
+
+  def extract_hours_task
+    task_items.map do |task_item|
+      hour_start = task_item.hour_start
+      hour_end = task_item.hour_end
+
+      start_time = format('%02d:%02d', hour_start.hour, hour_start.min)
+      end_time = format('%02d:%02d', hour_end.hour, hour_end.min)
+
+      [start_time, end_time]
+    end
   end
 end
