@@ -56,5 +56,18 @@ RSpec.describe 'Welcome', type: :request do
       expect(response_json[0]['company_id']).to eq(company.id)
       expect(response_json[0]['name']).to eq(software.name)
     end
+
+    it 'display all software by company_id' do
+      company = Company.create!(name: 'Company Example')
+      software_one = company.softwares.create(name: 'Software Example - 01')
+      software_two = company.softwares.create(name: 'Software Example - 02')
+
+      get "/companies/#{company.id}/softwares"
+      response_json = response.parsed_body
+      expect(response_json.count).to eq(2)
+      expect(response_json[0]['company_id']).to eq(company.id)
+      expect(response_json[0]['name']).to eq(software_one.name)
+      expect(response_json[1]['name']).to eq(software_two.name)
+    end
   end
 end
