@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 Rails.application.routes.draw do
-  # get '/tasks', to: 'tasks#index'
-  resources :tasks
+  resources :tasks do
+    resources :task_items
+  end
 
   get '/companies/:company_id/softwares', to: 'welcome#softwares_by_company_id'
   get '/softwares', to: 'welcome#softwares'
