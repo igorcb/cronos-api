@@ -9,6 +9,23 @@ class Task < ApplicationRecord
 
   enum status: { opened: 0, finalized: 1, reopened: 2, delivered: 3 }
 
+  def as_json(_options = {})
+    {
+      id:,
+      companyName: company.name,
+      softwareName: software.name,
+      code:,
+      name:,
+      dateOpened: date_opened,
+      status:,
+      observation:,
+    }
+  end
+
+  def software
+    Software.where(id: software_id).first
+  end
+
   def update_status
     return 'opened' if task_items.blank?
 

@@ -45,14 +45,20 @@ RSpec.describe TasksController, type: :controller do
     }
 
     it 'returns all tasks order date_opened desc' do
-      create(:task, task_one)
-      create(:task, task_two)
+      task_record_one = create(:task, task_one)
+      task_record_two = create(:task, task_two)
 
       get :index
       response_body = response.parsed_body
       expect(response_body.size).to eq(2)
-      expect(response_body[0]['date_opened']).to eq('2023-10-02')
-      expect(response_body[1]['date_opened']).to eq('2023-10-01')
+      expect(response_body[0]['id']).to eq(task_record_two.id)
+      expect(response_body[0]['dateOpened']).to eq('2023-10-02')
+      expect(response_body[0]['companyName']).to eq(task_record_one.company.name)
+      expect(response_body[0]['softwareName']).to eq(task_record_one.software.name)
+      expect(response_body[1]['id']).to eq(task_record_one.id)
+      expect(response_body[1]['dateOpened']).to eq('2023-10-01')
+      expect(response_body[1]['companyName']).to eq(task_record_one.company.name)
+      expect(response_body[1]['softwareName']).to eq(task_record_one.software.name)
     end
 
     it 'when params invalid return unprocessable_entity' do
@@ -85,7 +91,7 @@ RSpec.describe TasksController, type: :controller do
       response_body = response.parsed_body
       expect(response_body['code']).to eq('1025')
       expect(response_body['name']).to eq('Anything')
-      expect(response_body['date_opened']).to eq('2023-10-01')
+      expect(response_body['dateOpened']).to eq('2023-10-01')
       expect(response_body['status']).to eq('opened')
     end
 
@@ -100,7 +106,7 @@ RSpec.describe TasksController, type: :controller do
       response_body = response.parsed_body
       expect(response_body['code']).to eq('1025')
       expect(response_body['name']).to eq('Anything')
-      expect(response_body['date_opened']).to eq('2023-10-01')
+      expect(response_body['dateOpened']).to eq('2023-10-01')
       expect(response_body['status']).to eq('opened')
     end
   end
