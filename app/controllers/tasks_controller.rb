@@ -1,5 +1,5 @@
 class TasksController < ApplicationController
-  before_action :set_task
+  before_action :set_task, only: [:show]
 
   def index
     @tasks = Task.order(date_opened: :desc)
