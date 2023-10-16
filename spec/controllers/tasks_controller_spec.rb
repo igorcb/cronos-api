@@ -88,5 +88,20 @@ RSpec.describe TasksController, type: :controller do
       expect(response_body['date_opened']).to eq('2023-10-01')
       expect(response_body['status']).to eq('opened')
     end
+
+    it 'must return data from a task' do
+      task = create(:task, task_one)
+
+      get :show, params: { id: task.id }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include('hasErrors')
+
+      response_body = response.parsed_body
+      expect(response_body['code']).to eq('1025')
+      expect(response_body['name']).to eq('Anything')
+      expect(response_body['date_opened']).to eq('2023-10-01')
+      expect(response_body['status']).to eq('opened')
+    end
   end
 end
