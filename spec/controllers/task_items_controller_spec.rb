@@ -38,13 +38,11 @@ RSpec.describe TaskItemsController, type: :controller do
 
       response_body = response.parsed_body
 
-      hour_start = time_parse(response_body[0]['hour_start'])
-      hour_end = time_parse(response_body[0]['hour_end'])
-
       expect(response_body.size).to eq(1)
-      expect(response_body[0]['date_start']).to eq('2023-10-16')
-      expect(hour_start).to eq('09:00')
-      expect(hour_end).to eq('10:15')
+      expect(response_body[0]['dateStart']).to eq('2023-10-16')
+      expect(response_body[0]['hourStart']).to eq('09:00')
+      expect(response_body[0]['hourEnd']).to eq('10:15')
+      expect(response_body[0]['hourEnd']).to eq('10:15')
       expect(response_body[0]['status']).to eq('pending')
     end
 
@@ -54,7 +52,6 @@ RSpec.describe TaskItemsController, type: :controller do
       expect(response).to have_http_status(:unprocessable_entity)
 
       response_body = response.parsed_body
-      # expect(response_body).to include('task' => ['must exist'])
       expect(response_body).to include('date_start' => ["can't be blank"])
       expect(response_body).to include('hour_start' => ["can't be blank"])
       expect(response_body).to include('status' => ["can't be blank"])
@@ -68,17 +65,11 @@ RSpec.describe TaskItemsController, type: :controller do
 
       response_body = response.parsed_body
 
-      hour_start = time_parse(response_body['hour_start'])
-      hour_end = time_parse(response_body['hour_end'])
-
-      expect(response_body['date_start']).to eq('2023-10-16')
-      expect(hour_start).to eq('10:16')
-      expect(hour_end).to eq('11:23')
+      expect(response_body['dateStart']).to eq('2023-10-16')
+      expect(response_body['hourStart']).to eq('10:16')
+      expect(response_body['hourEnd']).to eq('11:23')
+      expect(response_body['totalHours']).to eq('01:07')
       expect(response_body['status']).to eq('pending')
     end
-  end
-
-  def time_parse(time)
-    Time.zone.parse(time).strftime('%H:%M')
   end
 end

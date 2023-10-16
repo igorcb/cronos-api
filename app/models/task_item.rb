@@ -11,4 +11,33 @@ class TaskItem < ApplicationRecord
   after_save :task_update_status
 
   delegate :update_status, to: :task, prefix: true
+
+  def as_json(_options = {})
+    {
+      id:,
+      task_id:,
+      dateStart: date_start,
+      hourStart: time_parse(hour_start),
+      hourEnd: time_parse(hour_end),
+      totalHours: total_hours,
+      status:,
+      observation:,
+    }
+  end
+
+  def total_hours
+    CalculateHours.new.execute(extract_hours_task)
+  end
+
+  private
+
+  def extract_hours_task
+    [
+      [time_parse(hour_start), time_parse(hour_end)],
+    ]
+  end
+
+  def time_parse(time)
+    time.to_time.strftime('%H:%M')
+  end
 end
