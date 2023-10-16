@@ -94,8 +94,6 @@ RSpec.describe TasksController, type: :controller do
       expect(response_body['dateOpened']).to eq('2023-10-01')
       expect(response_body['status']).to eq('opened')
     end
-<<<<<<< Updated upstream
-=======
 
     it 'must return data from a task' do
       task = create(:task, task_one)
@@ -111,6 +109,5 @@ RSpec.describe TasksController, type: :controller do
       expect(response_body['dateOpened']).to eq('2023-10-01')
       expect(response_body['status']).to eq('opened')
     end
->>>>>>> Stashed changes
   end
 end
