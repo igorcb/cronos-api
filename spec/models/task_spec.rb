@@ -130,6 +130,21 @@ RSpec.describe Task, type: :model do
     expect(task.total_hours).to eq('00:04')
   end
 
+  it 'total hours of a task with one item invalid' do
+    task = described_class.create!(card)
+
+    task.task_items.create(
+      date_start: '2023-10-04',
+      hour_start: '2023-10-04 19:43:37',
+      date_end: '2023-10-04',
+      hour_end: '',
+      status: 'pending',
+      task:,
+    )
+
+    expect(task.total_hours).to eq('00:00')
+  end
+
   it 'total hours of a task with more than one item' do
     task = described_class.create!(card)
 
