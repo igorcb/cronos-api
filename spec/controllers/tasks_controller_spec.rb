@@ -108,6 +108,7 @@ RSpec.describe TasksController, type: :controller do
       expect(response_body['name']).to eq('Anything')
       expect(response_body['dateOpened']).to eq('2023-10-01')
       expect(response_body['status']).to eq('opened')
+      expect(response_body['totalHours']).to eq('00:00')
     end
   end
 end
