@@ -50,8 +50,6 @@ class Task < ApplicationRecord
     return errors.add(:base, msg_finalized) unless task_items.last.finalized?
 
     update(status: :delivered, date_delivered: Date.current)
-  end
-
   private
 
   def extract_hours_task
