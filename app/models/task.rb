@@ -41,13 +41,6 @@ class Task < ApplicationRecord
     CalculateHours.new.execute(extract_hours_task)
   end
 
-  def all_task_items_have_hour_end_data?
-    task_items.each do |task_item|
-      return false if task_item.hour_end.blank?
-    end
-    true
-  end
-
   private
 
   def extract_hours_task
