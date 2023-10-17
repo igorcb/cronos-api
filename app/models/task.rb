@@ -18,6 +18,7 @@ class Task < ApplicationRecord
       name:,
       dateOpened: date_opened,
       status:,
+      totalHours: total_hours,
       observation:,
     }
   end
