@@ -8,6 +8,12 @@ RSpec.describe CalculateHours do
 
     let(:hours_empty) { [] }
 
+    let(:hours_invalid) {
+      [
+        ['07:02', nil],
+      ]
+    }
+
     let(:one_hour_valid) {
       [
         ['07:02', '09:19'],
@@ -25,6 +31,10 @@ RSpec.describe CalculateHours do
 
     it 'when you have not informed the start and end times' do
       expect(calculate.execute(hours_empty)).to eq('00:00')
+    end
+
+    it 'when you did not inform the end time' do
+      expect(calculate.execute(hours_invalid)).to eq('00:00')
     end
 
     it 'when you have informed the start and end times' do

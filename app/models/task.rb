@@ -41,15 +41,24 @@ class Task < ApplicationRecord
     CalculateHours.new.execute(extract_hours_task)
   end
 
+  def all_task_items_have_hour_end_data?
+    task_items.each do |task_item|
+      return false if task_item.hour_end.blank?
+    end
+    true
+  end
+
   private
 
   def extract_hours_task
     task_items.map do |task_item|
-      hour_start = task_item.hour_start
-      hour_end = task_item.hour_end
+      if task_item.hour_start.present? && task_item.hour_end.present?
+        hour_start = task_item.hour_start
+        hour_end = task_item.hour_end
 
-      start_time = format('%<hour>02d:%<minute>02d', hour: hour_start.hour, minute: hour_start.min)
-      end_time = format('%<hour>02d:%<minute>02d', hour: hour_end.hour, minute: hour_end.min)
+        start_time = format('%<hour>02d:%<minute>02d', hour: hour_start.hour, minute: hour_start.min)
+        end_time = format('%<hour>02d:%<minute>02d', hour: hour_end.hour, minute: hour_end.min)
+      end
 
       [start_time, end_time]
     end
