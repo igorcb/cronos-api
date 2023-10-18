@@ -38,6 +38,8 @@ class TaskItem < ApplicationRecord
   end
 
   def time_parse(time)
-    time.to_time.strftime('%H:%M')
+    return if time.nil?
+
+    time.to_time&.strftime('%H:%M')
   end
 end
