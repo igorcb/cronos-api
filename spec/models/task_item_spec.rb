@@ -137,4 +137,9 @@ RSpec.describe TaskItem, type: :model do
       expect(task.status).to eq('reopened')
     end
   end
+
+  it 'time parse' do
+    hour = task_item.time_parse(task_item.hour_end)
+    expect(hour).to eq('16:30')
+  end
 end
