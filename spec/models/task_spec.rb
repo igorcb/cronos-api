@@ -166,4 +166,48 @@ RSpec.describe Task, type: :model do
 
     expect(task.total_hours).to eq('00:27')
   end
+
+  context 'when mark as delivered' do
+    it 'when there is no task_items return an error' do
+      msg = 'Cannot mark a task as delivered because it has no task_item'
+      task.mark_as_delivery
+
+      expect(task.errors.messages[:base]).to include(msg)
+    end
+
+    it 'when the last item of the task is not finalized' do
+      task = described_class.create!(card)
+
+      task.task_items.create(
+        date_start: '2023-10-04',
+        hour_start: '2023-10-04 19:43:37',
+        date_end: '2023-10-04',
+        hour_end: '2023-10-04 19:47:37',
+        status: 'pending',
+      )
+
+      task.mark_as_delivery
+
+      expect(task.errors[:base]).to include('The status of the last task is not finished')
+    end
+
+    it 'mark task as delivered and date_delivered' do
+      task = described_class.create!(card)
+
+      task.task_items.create(
+        date_start: '2023-10-04',
+        hour_start: '2023-10-04 19:43:37',
+        date_end: '2023-10-04',
+        hour_end: '2023-10-04 19:47:37',
+        status: 'finalized',
+      )
+
+      task.mark_as_delivery
+
+      expect(task.errors[:base]).to be_empty
+      expect(task).to be_valid
+      expect(task.status).to eq('delivered')
+      expect(task.date_delivered).to eq(Date.current)
+    end
+  end
 end
