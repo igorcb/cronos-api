@@ -18,6 +18,7 @@ class Task < ApplicationRecord
       name:,
       dateOpened: date_opened,
       status:,
+      dateDelivered: date_delivered,
       totalHours: total_hours,
       observation:,
     }
@@ -39,6 +40,16 @@ class Task < ApplicationRecord
 
   def total_hours
     CalculateHours.new.execute(extract_hours_task)
+  end
+
+  def mark_as_delivery
+    msg_items = 'Cannot mark a task as delivered because it has no task_item'
+    msg_finalized = 'The status of the last task is not finished'
+
+    return errors.add(:base, msg_items) if task_items.blank?
+    return errors.add(:base, msg_finalized) unless task_items.last.finalized?
+
+    update(status: :delivered, date_delivered: Date.current)
   end
 
   private

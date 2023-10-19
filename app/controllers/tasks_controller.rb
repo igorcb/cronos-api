@@ -1,5 +1,5 @@
 class TasksController < ApplicationController
-  before_action :set_task, only: [:show]
+  before_action :set_task, only: %i[show mark_delivered]
 
   def index
     @tasks = Task.order(date_opened: :desc)
@@ -17,6 +17,15 @@ class TasksController < ApplicationController
       render json: @task, status: :created
     else
       render json: @task.errors.messages, status: :unprocessable_entity
+    end
+  end
+
+  def mark_delivered
+    @task.mark_as_delivery
+    if @task.errors.empty?
+      head :ok
+    else
+      render json: @task.errors.messages[:base], status: :unprocessable_entity
     end
   end
 

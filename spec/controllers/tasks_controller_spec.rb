@@ -110,5 +110,41 @@ RSpec.describe TasksController, type: :controller do
       expect(response_body['status']).to eq('opened')
       expect(response_body['totalHours']).to eq('00:00')
     end
+
+    context 'when mark as delivered' do
+      it 'does not mark the task delivery without task_items and returns HTTP 422' do
+        msg = 'Cannot mark a task as delivered because it has no task_item'
+        task = create(:task, task_one)
+
+        post :mark_delivered, params: { id: task.id }
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response.parsed_body).to include(msg)
+        expect(task.status).not_to eq('delivered')
+      end
+
+      it 'does not marks the task as delivered with last item task is pending returns HTTP 422' do
+        msg = 'The status of the last task is not finished'
+        task = create(:task, task_one)
+        create(:task_item, task:, status: :pending)
+
+        post :mark_delivered, params: { id: task.id }
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response.parsed_body).to include(msg)
+        expect(task.status).not_to eq('delivered')
+      end
+
+      it 'marks the task as delivered and returns HTTP 200' do
+        task = create(:task, task_one)
+        create(:task_item, task:, status: :finalized)
+
+        post :mark_delivered, params: { id: task.id }
+
+        expect(response).to have_http_status(:ok)
+        task.reload
+        expect(task.status).to eq('delivered')
+        expect(task.date_delivered).to eq(Date.current)
+      end
+    end
   end
 end
