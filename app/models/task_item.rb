@@ -29,15 +29,15 @@ class TaskItem < ApplicationRecord
     CalculateHours.new.execute(extract_hours_task)
   end
 
+  def time_parse(time)
+    time.to_time.strftime('%H:%M')
+  end
+
   private
 
   def extract_hours_task
     [
       [time_parse(hour_start), time_parse(hour_end)],
     ]
-  end
-
-  def time_parse(time)
-    time.to_time.strftime('%H:%M')
   end
 end
