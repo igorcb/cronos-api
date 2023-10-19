@@ -30,7 +30,7 @@ class TaskItem < ApplicationRecord
   end
 
   def time_parse(time)
-    time.to_time&.strftime('%H:%M')
+    time.to_time.strftime('%H:%M')
   end
 
   private
