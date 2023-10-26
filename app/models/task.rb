@@ -38,7 +38,7 @@ class Task < ApplicationRecord
     end
   end
 
-  def total_hours_tasks
+  def total_hours_task_items
     CalculateHours.new.execute(extract_hours_task)
   end
 
