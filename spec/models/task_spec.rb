@@ -112,7 +112,7 @@ RSpec.describe Task, type: :model do
   it 'total hours of a task without item' do
     task = described_class.create!(card)
 
-    expect(task.total_hours).to eq('00:00')
+    expect(task.total_hours_task_items).to eq('00:00')
   end
 
   it 'total hours of a task with one item' do
@@ -127,7 +127,7 @@ RSpec.describe Task, type: :model do
       task:,
     )
 
-    expect(task.total_hours).to eq('00:04')
+    expect(task.total_hours_task_items).to eq('00:04')
   end
 
   it 'total hours of a task with one item invalid' do
@@ -142,7 +142,7 @@ RSpec.describe Task, type: :model do
       task:,
     )
 
-    expect(task.total_hours).to eq('00:00')
+    expect(task.total_hours_task_items).to eq('00:00')
   end
 
   it 'total hours of a task with more than one item' do
@@ -164,7 +164,7 @@ RSpec.describe Task, type: :model do
       status: 'pending',
     )
 
-    expect(task.total_hours).to eq('00:27')
+    expect(task.total_hours_task_items).to eq('00:27')
   end
 
   context 'when mark as delivered' do
