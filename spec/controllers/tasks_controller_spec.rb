@@ -13,6 +13,7 @@ RSpec.describe TasksController, type: :controller do
         name: 'Anything',
         description: 'Laborum et culpa veniam laboris voluptate',
         date_opened: '2023-10-01',
+        total_hours: '00:00',
         status: Task.statuses[:opened],
         date_delivered: Date.current,
         observation: 'Eiusmod irure est veniam commodo reprehenderit',
