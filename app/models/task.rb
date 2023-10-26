@@ -32,7 +32,7 @@ class Task < ApplicationRecord
     return 'opened' if task_items.blank?
 
     if task_items.last.finalized?
-      update(status: 'finalized')
+      update(status: 'finalized', total_hours: total_hours_task_items)
     else
       update(status: 'reopened')
     end

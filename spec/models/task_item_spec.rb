@@ -111,6 +111,7 @@ RSpec.describe TaskItem, type: :model do
     task.reload
 
     expect(task.status).to eq('finalized')
+    expect(task.total_hours).to eq('00:04')
   end
 
   context 'when creating an item from a completed task' do
