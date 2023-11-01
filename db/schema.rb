@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_10_26_213841) do
+ActiveRecord::Schema[7.0].define(version: 2023_11_01_230118) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -59,6 +59,17 @@ ActiveRecord::Schema[7.0].define(version: 2023_10_26_213841) do
     t.index ["company_id", "software_id", "code"], name: "idx_card_on_company_id_and_software_and_code_uniq", unique: true
     t.index ["company_id"], name: "index_tasks_on_company_id"
     t.index ["software_id"], name: "index_tasks_on_software_id"
+  end
+
+  create_table "uploads", force: :cascade do |t|
+    t.string "file_name"
+    t.integer "total_lines"
+    t.integer "status"
+    t.integer "success_count"
+    t.integer "error_count"
+    t.text "error_messages"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   add_foreign_key "softwares", "companies"
