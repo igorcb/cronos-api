@@ -18,10 +18,6 @@ RSpec.describe CalculateTotalHours do
       ['09:60']
     }
 
-    let(:sixty_minute) {
-      ['09:60']
-    }
-
     let(:less_than_sixty_minute) {
       ['09:50']
     }
