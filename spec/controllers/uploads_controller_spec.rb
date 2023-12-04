@@ -23,12 +23,14 @@ RSpec.describe UploadsController, type: :controller do
     end
 
     it 'returns an error if upload record cannot be saved' do
-      allow_any_instance_of(Upload).to receive(:save).and_return(false)
+      upload_instance = instance_double(Upload)
+      allow(upload_instance).to receive(:save).and_return(false)
+      allow(Upload).to receive(:new).and_return(upload_instance)
 
       post :create, params: { file: excel_file }
 
       expect(response).to have_http_status(:unprocessable_entity)
-      expect(JSON.parse(response.body)).to eq({ 'error' => 'Failed to save upload record.' })
+      expect(response.parsed_body).to eq({ 'error' => 'Failed to save upload record.' })
     end
   end
 end
