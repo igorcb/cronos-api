@@ -15,7 +15,7 @@ RSpec.describe Task, type: :model do
     )
   }
 
-  let(:company) { create(:company) }
+  let(:company) { create(:company, value: 10) }
   let(:software) { company.softwares.create(name: 'Software Example') }
 
   let(:card) {

@@ -20,7 +20,7 @@ RSpec.describe 'Welcome', type: :request do
 
   describe 'GET /companies' do
     let(:companies_attributes) {
-      { name: 'Example' }
+      { name: 'Example', value: 10 }
     }
 
     it 'returns http success' do
@@ -47,7 +47,7 @@ RSpec.describe 'Welcome', type: :request do
     end
 
     it 'display all softwares' do
-      company = Company.create!(name: 'Company Example')
+      company = Company.create!(name: 'Company Example', value: 10)
       software = company.softwares.create(name: 'Software Example')
 
       get '/softwares'
@@ -58,7 +58,7 @@ RSpec.describe 'Welcome', type: :request do
     end
 
     it 'display all software by company_id' do
-      company = Company.create!(name: 'Company Example')
+      company = Company.create!(name: 'Company Example', value: 10, value: 10)
       software_one = company.softwares.create(name: 'Software Example - 01')
       software_two = company.softwares.create(name: 'Software Example - 02')
 
@@ -71,7 +71,7 @@ RSpec.describe 'Welcome', type: :request do
     end
 
     it 'return total dashboard' do
-      company = create(:company)
+      company = create(:company, value: 10)
       software = create(:software, company:)
       task_one = {
         company:,

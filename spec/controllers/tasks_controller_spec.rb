@@ -2,7 +2,7 @@ require 'rails_helper'
 
 RSpec.describe TasksController, type: :controller do
   describe 'GET /tasks' do
-    let!(:company) { create(:company) }
+    let!(:company) { create(:company, value: 10) }
     let(:software) { create(:software, company:, name: 'Software Example') }
 
     let(:task_one) {
@@ -77,7 +77,7 @@ RSpec.describe TasksController, type: :controller do
     end
 
     it 'when params valid return success' do
-      company = create(:company, name: 'Company Example')
+      company = create(:company, name: 'Company Example', value: 10)
       software = create(:software, company:, name: 'Software Example ')
 
       task_one[:company_id] = company.id

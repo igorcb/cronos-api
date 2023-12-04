@@ -7,7 +7,7 @@ RSpec.describe UploadService do
 
     it 'processes the Excel file and updates the upload status' do
       upload = create(:upload, id: upload_id, status: :processing)
-      company = create(:company, name: 'NobeSistemas')
+      company = create(:company, name: 'NobeSistemas', value: 10)
       create(:software, company:, name: 'Almoxarifado')
 
       allow(Roo::Excelx).to receive(:new).with(file_path).and_return(mock_excel)
@@ -36,7 +36,7 @@ RSpec.describe UploadService do
     it 'handles case where company does not exist' do
       upload = create(:upload, id: upload_id, status: :processing)
       Company.where(name: 'NobeSistemas').destroy_all
-      company = create(:company, name: 'Example Company')
+      company = create(:company, name: 'Example Company', value: 10)
       create(:software, company:, name: 'Almoxarifado')
 
       allow(Roo::Excelx).to receive(:new).with(file_path).and_return(mock_excel)
@@ -51,7 +51,7 @@ RSpec.describe UploadService do
 
     it 'handles case where software does not exist' do
       upload = create(:upload, id: upload_id, status: :processing)
-      create(:company, name: 'NobeSistemas')
+      create(:company, name: 'NobeSistemas', value: 10)
       Software.where(name: 'Almoxarifado').destroy_all
 
       allow(Roo::Excelx).to receive(:new).with(file_path).and_return(mock_excel)
@@ -70,7 +70,7 @@ RSpec.describe UploadService do
         file_path = 'example.xlsx'
         service = described_class.new(file_path, upload_id)
 
-        company = Company.create(name: 'NobeSistemas')
+        company = Company.create(name: 'NobeSistemas', value: 10)
         software = Software.create(company:, name: 'Almoxarifado')
 
         task = Task.create(company:, software:, code: '123', name: 'Task example', date_opened: '01/09/2023', status: 'opened')
@@ -92,7 +92,7 @@ RSpec.describe UploadService do
         create(:upload, id: upload_id, status: :processing)
         file_path = 'example.xlsx'
 
-        company = Company.create(name: 'NobeSistemas')
+        company = Company.create(name: 'NobeSistemas', value: 10)
         software = Software.create(company:, name: 'Almoxarifado')
         code = '123'
         Task.create(company:, software:, code: '123', name: 'Task example', date_opened: '01/09/2023', status: 'opened')
