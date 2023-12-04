@@ -9,6 +9,7 @@ class UploadService
   def call
     excel = Roo::Excelx.new(@file_path)
     count_lines = 0
+
     excel.each_with_index do |row, index|
       next if index.zero? || row[0].blank?
 
@@ -23,6 +24,7 @@ class UploadService
 
       @date_opened = row[1]
       @date_start = @date_opened
+
       @hour_start = row[2]
       @date_end = @date_opened
       @hour_end = row[3]
