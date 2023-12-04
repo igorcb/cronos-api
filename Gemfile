@@ -23,7 +23,7 @@ gem 'sidekiq', '7.2.0'
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
-  gem 'brakeman', '5.4.1'
+  gem 'brakeman', '6.0.1'
   gem 'bundler-audit', '0.9.1'
   gem 'byebug', '11.1.3'
   gem 'colorize', '0.8.1', require: nil
@@ -32,11 +32,11 @@ group :development, :test do
   gem 'notifier', '1.2.2'
   gem 'rspec', '3.12'
   gem 'rspec-rails', '6.0.1'
-  gem 'rubocop', '1.48.1', require: false
+  gem 'rubocop', '1.58.0', require: false
   gem 'rubocop-git', '0.1.3', require: false
-  gem 'rubocop-performance', '1.16.0 ', require: false
-  gem 'rubocop-rails', '2.18.0', require: false
-  gem 'rubocop-rspec', '2.19.0', require: false
+  gem 'rubocop-performance', '1.19.1', require: false
+  gem 'rubocop-rails', '2.22.2', require: false
+  gem 'rubocop-rspec', '2.25.0', require: false
   gem 'rubocop-factory_bot', '2.24'
   gem 'rails-controller-testing', '1.0.5'
   gem 'shoulda-matchers', '5.3'

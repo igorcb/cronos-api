@@ -134,6 +134,12 @@ Performance/CollectionLiteralInLoop:
   Exclude:
     - "**/*_spec.rb"
 
+Rails/FilePath:
+  Enabled: false
+
+Rails/RootPathnameMethods:
+  Enabled: false
+
 # Rails/Date:
 #   Enabled: false
 
@@ -354,8 +360,8 @@ RSpec/SubjectDeclaration:
   Enabled: false
 
 # version 2.7.0
-RSpec/FactoryBot/SyntaxMethods:
-  Enabled: false
+#RSpec/FactoryBot/SyntaxMethods:
+#  Enabled: false
 
 # version 2.9.0
 RSpec/BeEq:
@@ -370,6 +376,7 @@ RSpec/VerifiedDoubleReference:
 # version 2.11.0
 RSpec/ChangeByZero:
   Enabled: false
+
 RSpec/ExpectChange:
   Enabled: false
 
@@ -378,8 +385,8 @@ RSpec/NoExpectationExample:
   Enabled: false
 
 # version 2.14
-RSpec/FactoryBot/ConsistentParenthesesStyle:
-  Enabled: false
+#RSpec/FactoryBot/ConsistentParenthesesStyle:
+#  Enabled: false
 
 RSpec/Rails/InferredSpecType:
   Enabled: false
