@@ -7,7 +7,6 @@ class UploadsController < ApplicationController
   def create
     file = params[:file]
     # Salva o arquivo no sistema de arquivos temporário
-
     temp_file_path = File.join(Rails.root, 'tmp', file.original_filename)
 
     File.open(temp_file_path, 'wb') { |f| f.write(file.read) }
