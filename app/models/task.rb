@@ -24,6 +24,11 @@ class Task < ApplicationRecord
     }
   end
 
+  def self.total_hours_tasks
+    hours = Task.pluck(:total_hours)
+    CalculateTotalHours.new.execute(hours)
+  end
+
   def software
     Software.where(id: software_id).first
   end

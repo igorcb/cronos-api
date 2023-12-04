@@ -210,4 +210,20 @@ RSpec.describe Task, type: :model do
       expect(task.date_delivered).to eq(Date.current)
     end
   end
+
+  it 'total hours all task ' do
+    task = described_class.create!(card)
+    task.task_items.create(
+      date_start: '2023-10-04',
+      hour_start: '2023-10-04 19:43:37',
+      date_end: '2023-10-04',
+      hour_end: '2023-10-04 19:47:37',
+      status: 'finalized',
+    )
+    task.reload
+    expect(task).to be_valid
+    expect(task.status).to eq('finalized')
+    expect(described_class.total_hours_tasks).to eq('00:04')
+  end
+
 end
