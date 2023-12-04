@@ -20,4 +20,12 @@ class WelcomeController < ApplicationController
     @softwares = @company.softwares.includes(:company).order('companies.name, softwares.name')
     render json: @softwares.to_json, status: :ok
   end
+
+  def dashboard
+    render json: {
+             totalCards: Task.total_count_tasks,
+             totalHoursCards: Task.total_hours_tasks,
+           },
+           status: :ok
+  end
 end
