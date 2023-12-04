@@ -58,7 +58,7 @@ RSpec.describe 'Welcome', type: :request do
     end
 
     it 'display all software by company_id' do
-      company = Company.create!(name: 'Company Example', value: 10, value: 10)
+      company = Company.create!(name: 'Company Example', value: 10)
       software_one = company.softwares.create(name: 'Software Example - 01')
       software_two = company.softwares.create(name: 'Software Example - 02')
 
