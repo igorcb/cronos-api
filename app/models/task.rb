@@ -29,6 +29,10 @@ class Task < ApplicationRecord
     CalculateTotalHours.new.execute(hours)
   end
 
+  def self.total_count_tasks
+    Task.count
+  end
+
   def software
     Software.where(id: software_id).first
   end

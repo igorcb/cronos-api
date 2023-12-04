@@ -69,5 +69,40 @@ RSpec.describe 'Welcome', type: :request do
       expect(response_json[0]['name']).to eq(software_one.name)
       expect(response_json[1]['name']).to eq(software_two.name)
     end
+
+    it 'return total dashboard' do
+      company = create(:company)
+      software = create(:software, company:)
+      task_one = {
+        company:,
+        software:,
+        code: '1204',
+        name: 'Card Example - 1',
+        date_opened: Date.current,
+        status: Task.statuses[:opened],
+      }
+      task_two = {
+        company:,
+        software:,
+        code: '1205',
+        name: 'Card Example - 2',
+        date_opened: Date.current,
+        status: Task.statuses[:opened],
+      }
+
+      record_task_one = create(:task, task_one)
+      record_task_two = create(:task, task_two)
+
+      create(:task_item, task: record_task_one)
+      create(:task_item, task: record_task_two)
+
+      get '/dashboard/'
+
+      response_body = response.parsed_body
+      expect(response).to have_http_status(:ok)
+      expect(response_body.size).to eq(2)
+      expect(response_body['totalCards']).to eq(2)
+      expect(response_body['totalHoursCards']).to eq('00:08')
+    end
   end
 end
