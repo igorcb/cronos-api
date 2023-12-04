@@ -33,6 +33,14 @@ class Task < ApplicationRecord
     Task.count
   end
 
+  def self.total_value_tasks
+    value = Company.first.value.to_f
+
+    hours, minutes = Task.total_hours_tasks.split(':')
+    total_minutes = (value / 60) * minutes.to_f
+    (hours.to_f * value) + total_minutes.round(2)
+  end
+
   def software
     Software.where(id: software_id).first
   end

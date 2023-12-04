@@ -100,9 +100,10 @@ RSpec.describe 'Welcome', type: :request do
 
       response_body = response.parsed_body
       expect(response).to have_http_status(:ok)
-      expect(response_body.size).to eq(2)
+      expect(response_body.size).to eq(3)
       expect(response_body['totalCards']).to eq(2)
       expect(response_body['totalHoursCards']).to eq('00:08')
+      expect(response_body['totalValueCards']).to eq(1.33)
     end
   end
 end

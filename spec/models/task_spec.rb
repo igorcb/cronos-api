@@ -249,4 +249,45 @@ RSpec.describe Task, type: :model do
     )
     expect(described_class.total_count_tasks).to eq(2)
   end
+
+  it 'total value all task ' do
+    task_one = described_class.create!(
+      {
+        company:,
+        software:,
+        code: '1204',
+        name: 'Card Example',
+        date_opened: Date.current,
+        status: described_class.statuses[:opened],
+      },
+    )
+    task_two = described_class.create!(
+      {
+        company:,
+        software:,
+        code: '1205',
+        name: 'Card Example - 2',
+        date_opened: Date.current,
+        status: described_class.statuses[:opened],
+      },
+    )
+
+    task_one.task_items.create(
+      date_start: '2023-10-04',
+      hour_start: '2023-10-04 19:43:37',
+      date_end: '2023-10-04',
+      hour_end: '2023-10-04 19:47:37',
+      status: 'finalized',
+    )
+
+    task_two.task_items.create(
+      date_start: '2023-10-04',
+      hour_start: '2023-10-04 19:43:37',
+      date_end: '2023-10-04',
+      hour_end: '2023-10-04 19:47:37',
+      status: 'finalized',
+    )
+
+    expect(described_class.total_value_tasks).to eq(1.33)
+  end
 end
