@@ -72,7 +72,7 @@ class UploadService
   end
 
   def find_update
-    @find_update ||= Upload.find(@upload_id.id)
+    @find_update ||= Upload.find(@upload_id)
   end
 
   def status_parse(value)

@@ -6,19 +6,13 @@ RSpec.describe UploadServiceJob, type: :job do
     let(:upload_id) { 1 }
 
     it 'calls UploadService with the correct arguments' do
-      upload = instance_double(Upload)
-      allow(Upload).to receive(:find).with(upload_id).and_return(upload)
-
-      service = instance_double(UploadService)
-      allow(UploadService).to receive(:new).with(file_path, upload).and_return(service)
-
-      allow(service).to receive(:call)
+      upload_service_instance = instance_double(UploadService, call: true)
+      allow(UploadService).to receive(:new).and_return(upload_service_instance)
 
       described_class.new.perform(file_path, upload_id)
 
-      expect(Upload).to have_received(:find).with(upload_id)
-      expect(UploadService).to have_received(:new).with(file_path, upload)
-      expect(service).to have_received(:call)
+      expect(UploadService).to have_received(:new).with(file_path, upload_id)
+      expect(upload_service_instance).to have_received(:call)
     end
   end
 end
