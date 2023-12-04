@@ -225,5 +225,4 @@ RSpec.describe Task, type: :model do
     expect(task.status).to eq('finalized')
     expect(described_class.total_hours_tasks).to eq('00:04')
   end
-
 end
