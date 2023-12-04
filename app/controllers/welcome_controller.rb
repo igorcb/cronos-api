@@ -25,6 +25,7 @@ class WelcomeController < ApplicationController
     render json: {
              totalCards: Task.total_count_tasks,
              totalHoursCards: Task.total_hours_tasks,
+             totalValueCards: Task.total_value_tasks,
            },
            status: :ok
   end
