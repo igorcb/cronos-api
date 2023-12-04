@@ -72,7 +72,7 @@ RSpec.describe TaskItem, type: :model do
   end
 
   it 'when without task item is finalized set the task status to opened' do
-    company = create(:company, name: 'Example Company')
+    company = create(:company, name: 'Example Company', value: 10)
     software = company.softwares.create(name: 'Example Software')
     task = create(
       :task,
@@ -92,7 +92,7 @@ RSpec.describe TaskItem, type: :model do
   end
 
   it 'when the status of the last task item is finalized set the task status to finalized' do
-    company = create(:company, name: 'Example Company')
+    company = create(:company, name: 'Example Company', value: 10)
     software = company.softwares.create(name: 'Example Software')
     task = create(
       :task,
@@ -116,7 +116,7 @@ RSpec.describe TaskItem, type: :model do
 
   context 'when creating an item from a completed task' do
     it 'must have a reopened task status' do
-      company = create(:company, name: 'Example Company')
+      company = create(:company, name: 'Example Company', value: 10)
       software = company.softwares.create(name: 'Example Software')
       task = create(
         :task,

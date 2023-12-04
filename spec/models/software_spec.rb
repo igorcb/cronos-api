@@ -5,7 +5,7 @@ RSpec.describe Software, type: :model do
     described_class.new(company:, name: 'Anything')
   }
 
-  let(:company) { create(:company) }
+  let(:company) { create(:company, value: 10) }
 
   it { is_expected.to respond_to(:company) }
   it { is_expected.to respond_to(:name) }
