@@ -26,9 +26,9 @@ class WelcomeController < ApplicationController
              totalCards: Task.total_count_tasks,
              totalHoursCards: Task.total_hours_tasks,
              totalValueCards: Task.total_value_tasks,
-             totalCardsFinalized: Task.total_count_tasks_finalized,
-             totalHoursCardsFinalized: Task.total_hours_tasks_finalized,
-             totalValueCardsFinalized: Task.total_value_tasks_finalized,
+             totalCardsFinalized: Task.total_count_tasks_finalized_or_delivered,
+             totalHoursCardsFinalized: Task.total_hours_tasks_finalized_or_delivered,
+             totalValueCardsFinalized: Task.total_value_tasks_finalized_or_delivered,
            },
            status: :ok
   end

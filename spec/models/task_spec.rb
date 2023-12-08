@@ -291,7 +291,7 @@ RSpec.describe Task, type: :model do
     expect(described_class.total_value_tasks).to eq(1.33)
   end
 
-  it 'total hours all task status finalized' do
+  it 'total hours all task status finalized or delivered' do
     task = described_class.create!(card)
     task.task_items.create(
       date_start: '2023-10-04',
@@ -308,7 +308,7 @@ RSpec.describe Task, type: :model do
       status: 'finalized',
     )
     expect(task.status).to eq('finalized')
-    expect(described_class.total_hours_tasks_finalized).to eq('00:04')
+    expect(described_class.total_hours_tasks_finalized_or_delivered).to eq('00:04')
   end
 
   it 'total count all task status finalized' do
@@ -348,7 +348,7 @@ RSpec.describe Task, type: :model do
       hour_end: '2023-10-04 19:47:37',
       status: 'finalized',
     )
-    expect(described_class.total_count_tasks_finalized).to eq(2)
+    expect(described_class.total_count_tasks_finalized_or_delivered).to eq(2)
   end
 
   it 'total value all task status finalized' do
@@ -388,6 +388,6 @@ RSpec.describe Task, type: :model do
       hour_end: '2023-10-04 19:47:37',
       status: 'finalized',
     )
-    expect(described_class.total_value_tasks_finalized).to eq(1.33)
+    expect(described_class.total_value_tasks_finalized_or_delivered).to eq(1.33)
   end
 end
