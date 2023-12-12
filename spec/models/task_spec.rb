@@ -311,7 +311,7 @@ RSpec.describe Task, type: :model do
     expect(described_class.total_hours_tasks_finalized_or_delivered).to eq('00:04')
   end
 
-  it 'total count all task status finalized' do
+  it 'total count all task status finalized or delivered' do
     task_one = described_class.create!(
       {
         company:,
@@ -351,7 +351,7 @@ RSpec.describe Task, type: :model do
     expect(described_class.total_count_tasks_finalized_or_delivered).to eq(2)
   end
 
-  it 'total value all task status finalized' do
+  it 'total value all task status finalized or delivered' do
     task_one = described_class.create!(
       {
         company:,
