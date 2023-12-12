@@ -311,7 +311,7 @@ RSpec.describe Task, type: :model do
     expect(described_class.total_hours_tasks_finalized_or_delivered).to eq('00:04')
   end
 
-  it 'total count all task status finalized' do
+  it 'total count all task status finalized or delivered' do
     task_one = described_class.create!(
       {
         company:,
@@ -351,7 +351,7 @@ RSpec.describe Task, type: :model do
     expect(described_class.total_count_tasks_finalized_or_delivered).to eq(2)
   end
 
-  it 'total value all task status finalized' do
+  it 'total value all task status finalized or delivered' do
     task_one = described_class.create!(
       {
         company:,
@@ -389,5 +389,105 @@ RSpec.describe Task, type: :model do
       status: 'finalized',
     )
     expect(described_class.total_value_tasks_finalized_or_delivered).to eq(1.33)
+  end
+
+  it 'total hours all task status opened or reopened' do
+    task = described_class.create!(card)
+    task.task_items.create(
+      date_start: '2023-10-04',
+      hour_start: '2023-10-04 19:43:37',
+      date_end: '2023-10-04',
+      hour_end: '2023-10-04 19:47:37',
+      status: 'pending',
+    )
+    task.task_items.create(
+      date_start: '2023-10-04',
+      hour_start: '2023-10-04 19:43:37',
+      date_end: '2023-10-04',
+      hour_end: '2023-10-04 19:47:37',
+      status: 'pending',
+    )
+    expect(task.status).to eq('reopened')
+    expect(described_class.total_hours_tasks_opened_or_reopened).to eq('00:04')
+  end
+
+  it 'total count all task status opened or reopened' do
+    task_one = described_class.create!(
+      {
+        company:,
+        software:,
+        code: '1204',
+        name: 'Card Example',
+        date_opened: Date.current,
+        status: described_class.statuses[:opened],
+      },
+    )
+    task_two = described_class.create(
+      {
+        company:,
+        software:,
+        code: '1205',
+        name: 'Card Example - 2',
+        date_opened: Date.current,
+        status: described_class.statuses[:opened],
+      },
+    )
+
+    task_one.task_items.create(
+      date_start: '2023-10-04',
+      hour_start: '2023-10-04 19:43:37',
+      date_end: '2023-10-04',
+      hour_end: '2023-10-04 19:47:37',
+      status: 'pending',
+    )
+
+    task_two.task_items.create(
+      date_start: '2023-10-04',
+      hour_start: '2023-10-04 19:43:37',
+      date_end: '2023-10-04',
+      hour_end: '2023-10-04 19:47:37',
+      status: 'pending',
+    )
+    expect(described_class.total_count_tasks_opened_or_reopened).to eq(2)
+  end
+
+  it 'total value all task status opened or reopened' do
+    task_one = described_class.create!(
+      {
+        company:,
+        software:,
+        code: '1204',
+        name: 'Card Example',
+        date_opened: Date.current,
+        status: described_class.statuses[:opened],
+      },
+    )
+    task_two = described_class.create!(
+      {
+        company:,
+        software:,
+        code: '1205',
+        name: 'Card Example - 2',
+        date_opened: Date.current,
+        status: described_class.statuses[:opened],
+      },
+    )
+
+    task_one.task_items.create(
+      date_start: '2023-10-04',
+      hour_start: '2023-10-04 19:43:37',
+      date_end: '2023-10-04',
+      hour_end: '2023-10-04 19:47:37',
+      status: 'pending',
+    )
+
+    task_two.task_items.create(
+      date_start: '2023-10-04',
+      hour_start: '2023-10-04 19:43:37',
+      date_end: '2023-10-04',
+      hour_end: '2023-10-04 19:47:37',
+      status: 'pending',
+    )
+    expect(described_class.total_value_tasks_opened_or_reopened).to eq(1.33)
   end
 end
