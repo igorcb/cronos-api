@@ -73,6 +73,8 @@ RSpec.describe 'Welcome', type: :request do
     it 'return total dashboard' do
       company = create(:company, value: 10)
       software = create(:software, company:)
+
+      # create data tasks
       task_one = {
         company:,
         software:,
@@ -89,24 +91,39 @@ RSpec.describe 'Welcome', type: :request do
         date_opened: Date.current,
         status: Task.statuses[:opened],
       }
+      task_three = {
+        company:,
+        software:,
+        code: '1206',
+        name: 'Card Example - 3',
+        date_opened: Date.current,
+        status: Task.statuses[:opened],
+      }
 
+      # create tasks
       record_task_one = create(:task, task_one)
       record_task_two = create(:task, task_two)
+      record_task_three = create(:task, task_three)
 
+      # create task items
       create(:task_item, task: record_task_one)
       create(:task_item, task: record_task_two)
+      create(:task_item, task: record_task_three, status: 'pending')
 
       get '/dashboard/'
 
       response_body = response.parsed_body
       expect(response).to have_http_status(:ok)
-      expect(response_body.size).to eq(6)
-      expect(response_body['totalCards']).to eq(2)
-      expect(response_body['totalHoursCards']).to eq('00:08')
-      expect(response_body['totalValueCards']).to eq(1.33)
+      expect(response_body.size).to eq(9)
+      expect(response_body['totalCards']).to eq(3)
+      expect(response_body['totalHoursCards']).to eq('00:12')
+      expect(response_body['totalValueCards']).to eq(2.0)
       expect(response_body['totalCardsFinalized']).to eq(2)
       expect(response_body['totalHoursCardsFinalized']).to eq('00:08')
       expect(response_body['totalValueCardsFinalized']).to eq(1.33)
+      expect(response_body['totalCardsOpenedOrReopened']).to eq(1)
+      expect(response_body['totalHoursCardsOpenedOrReopened']).to eq('00:04')
+      expect(response_body['totalValueCardsOpenedOrReopened']).to eq(0.67)
     end
   end
 end
