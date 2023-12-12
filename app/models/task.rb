@@ -28,6 +28,10 @@ class Task < ApplicationRecord
     where(status: %i[finalized delivered])
   end
 
+  def self.opened_or_reopened
+    where(status: %i[opened reopened])
+  end
+
   def self.total_hours_tasks
     hours = Task.pluck(:total_hours)
     CalculateTotalHours.new.execute(hours)
@@ -58,6 +62,23 @@ class Task < ApplicationRecord
     value = Company.first.value.to_f
 
     hours, minutes = Task.finalized_or_delivered.total_hours_tasks.split(':')
+    total_minutes = (value / 60) * minutes.to_f
+    (hours.to_f * value) + total_minutes.round(2)
+  end
+
+  def self.total_hours_tasks_opened_or_reopened
+    hours = Task.opened_or_reopened.pluck(:total_hours)
+    CalculateTotalHours.new.execute(hours)
+  end
+
+  def self.total_count_tasks_opened_or_reopened
+    Task.opened_or_reopened.count
+  end
+
+  def self.total_value_tasks_opened_or_reopened
+    value = Company.first.value.to_f
+
+    hours, minutes = Task.opened_or_reopened.total_hours_tasks.split(':')
     total_minutes = (value / 60) * minutes.to_f
     (hours.to_f * value) + total_minutes.round(2)
   end
