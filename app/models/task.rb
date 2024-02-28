@@ -9,6 +9,35 @@ class Task < ApplicationRecord
 
   enum status: { opened: 0, finalized: 1, reopened: 2, delivered: 3 }
 
+  scope :year_and_month_current,
+        lambda {
+          current_month = Date.current.month
+          current_year = Date.current.year
+          where(
+            'EXTRACT(MONTH FROM date_opened) = ? AND EXTRACT(YEAR FROM date_opened) = ?',
+            current_month,
+            current_year,
+          )
+        }
+
+  scope :previous_to_current_month_and_year,
+        lambda {
+          first_day_of_current_month = Date.current.beginning_of_month
+
+          Task.where('date_opened < ?', first_day_of_current_month)
+        }
+
+  scope :delivered_year_and_month_current,
+        lambda {
+          current_month = Date.current.month
+          current_year = Date.current.year
+          where(
+            'EXTRACT(MONTH FROM date_delivered) = ? AND EXTRACT(YEAR FROM date_delivered) = ?',
+            current_month,
+            current_year,
+          )
+        }
+
   def as_json(_options = {})
     {
       id:,
@@ -33,29 +62,52 @@ class Task < ApplicationRecord
   end
 
   def self.total_hours_tasks
-    hours = Task.pluck(:total_hours)
+    @previous_to_current_month_and_year = Task.previous_to_current_month_and_year.opened_or_reopened
+    @current_month_and_year = Task.year_and_month_current
+
+    tasks = @previous_to_current_month_and_year.or(@current_month_and_year)
+    hours = tasks.pluck(:total_hours)
     CalculateTotalHours.new.execute(hours)
   end
 
   def self.total_count_tasks
-    Task.count
+    # Task.year_and_month_current.count
+    @previous_to_current_month_and_year = Task.previous_to_current_month_and_year.opened_or_reopened
+    @current_month_and_year = Task.year_and_month_current
+
+    @previous_to_current_month_and_year.or(@current_month_and_year).count
   end
 
   def self.total_value_tasks
     value = Company.first.value.to_f
 
-    hours, minutes = Task.total_hours_tasks.split(':')
+    @previous_to_current_month_and_year = Task.previous_to_current_month_and_year.opened_or_reopened
+    @current_month_and_year = Task.year_and_month_current
+
+    tasks = @previous_to_current_month_and_year.or(@current_month_and_year)
+
+    hours, minutes = tasks.total_hours_tasks.split(':')
     total_minutes = (value / 60) * minutes.to_f
     (hours.to_f * value) + total_minutes.round(2)
   end
 
   def self.total_hours_tasks_finalized_or_delivered
-    hours = Task.finalized_or_delivered.pluck(:total_hours)
+    tasks_delivered_year_and_month_current = Task.delivered_year_and_month_current # 16
+    tasks_finalized_or_delivered = Task.year_and_month_current.finalized_or_delivered # 18
+
+    tasks = tasks_delivered_year_and_month_current.or(tasks_finalized_or_delivered)
+
+    hours = tasks.finalized_or_delivered.pluck(:total_hours)
     CalculateTotalHours.new.execute(hours)
   end
 
   def self.total_count_tasks_finalized_or_delivered
-    Task.finalized_or_delivered.count
+    # Task.finalized_or_delivered.count
+    tasks_delivered_year_and_month_current = Task.delivered_year_and_month_current # 16
+    tasks_finalized_or_delivered = Task.year_and_month_current.finalized_or_delivered # 18
+
+    tasks = tasks_delivered_year_and_month_current.or(tasks_finalized_or_delivered)
+    tasks.count
   end
 
   def self.total_value_tasks_finalized_or_delivered
