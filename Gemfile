@@ -20,6 +20,7 @@ gem 'tzinfo-data', '1.2022', platforms: %i[mingw mswin x64_mingw jruby]
 
 gem 'roo', '2.10.0'
 gem 'sidekiq', '7.2.0'
+gem 'dotenv-rails', '3.1.7'
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

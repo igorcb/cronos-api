@@ -10,25 +10,27 @@ class UploadService
     excel = Roo::Excelx.new(@file_path)
     count_lines = 0
 
-    excel.each_with_index do |row, index|
-      next if index.zero? || row[0].blank?
+    excel.each_row_streaming(offset: 1) do |row|
+      # next if index.zero? || row[0].blank?
+
+      next if row[0].blank?
 
       count_lines += 1
 
-      @code, @name_temp = row[9].split(':')
+      @code, @name_temp = row[9].value.split(':')
       @code = @code.strip
       @name = @name_temp.strip
 
       @company_id = Company.where('lower(name) = ?', 'nobesistemas').first&.id
-      @software_id = Software.where('lower(name) = ?', row[6].downcase).first&.id
+      @software_id = Software.where('lower(name) = ?', row[6].value.downcase).first&.id
 
-      @date_opened = row[1]
+      @date_opened = row[1].formatted_value.to_s
       @date_start = @date_opened
 
-      @hour_start = row[2]
+      @hour_start = row[2].formatted_value.to_s
       @date_end = @date_opened
-      @hour_end = row[3]
-      @status = status_parse(row[7].downcase)
+      @hour_end = row[3].formatted_value.to_s
+      @status = status_parse(row[7].value.downcase.strip)
 
       @task = Task.where(company_id: @company_id, software_id: @software_id, code: @code).first
 

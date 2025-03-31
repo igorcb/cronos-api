@@ -1,0 +1,50 @@
+version: "3"
+
+services:
+  db:
+    container_name: cronos-api_db
+    image: postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+
+  # sidekiq:
+  #   build: .
+  #   command: bundle exec sidekiq -C config/sidekiq.yml # Correção no comando
+  #   depends_on:
+  #     - redis
+  #     - web
+  #   environment:
+  #     - REDIS_URL=redis://redis:6379/0
+  #   volumes:
+  #     - .:/app
+
+  web:
+    container_name: cronos-api_web
+    build: .
+    command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails s -p 4001 -b '0.0.0.0'"
+    volumes:
+      - .:/app
+    environment:
+      - BUNDLE_PATH=/app/vendor/bundle
+    ports:
+      - "4001:4001"
+    depends_on:
+      - db
+      - redis
+    stdin_open: true
+    tty: true
+
+  redis:
+    container_name: cronos-api_redis
+    image: redis:7.0.7
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+
+volumes:
+  redis-data:
