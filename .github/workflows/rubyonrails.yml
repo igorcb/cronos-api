@@ -67,11 +67,20 @@ jobs:
         env:
           PGHOST: ${{ env.PGHOST }}
           PGUSER: ${{ secrets.CI_PGUSER }}
+          CI_PGUSER: ${{ vars.CI_PGUSER }}
           PGPASSWORD: ${{ secrets.CI_PGPASSWORD }}
+          CI_PGPASSWORD: ${{ vars.CI_PGPASSWORD }}
           DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+          CI_DATABASE_URL: ${{ vars.CI_DATABASE_URL }}
         run: |
-          echo "PGHOST=$PGHOST"
+          echo "PGHOST=${PGHOST}"
           echo "Preparando banco..."
+          export DATABASE_URL="${DATABASE_URL:-${CI_DATABASE_URL:-${DATABASE_URL}}}"
+          export PGUSER="${PGUSER:-${CI_PGUSER:-${PGUSER}}}"
+          export PGPASSWORD="${PGPASSWORD:-${CI_PGPASSWORD:-${PGPASSWORD}}}"
+          if [ -z "${DATABASE_URL}" ]; then
+            export DATABASE_URL="postgres://postgres:postgres@localhost:5432/rails_test"
+          fi
           RAILS_ENV=test bundle exec rails db:create db:migrate
       # Add or replace test runners here
       - name: Run tests
