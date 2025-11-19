@@ -30,11 +30,16 @@ jobs:
       redis:
         image: redis:alpine
         ports: ["6379:6379"]
-        options: --entrypoint redis-server         
+        options: >-
+          --entrypoint redis-server
+          --health-cmd "redis-cli ping || exit 1"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 30
     env:
       RAILS_ENV: test
       DATABASE_URL: "postgres://postgres:postgres@localhost:5432/rails_test"
-      REDIS_URL: "redis://redis:6379/0"
+      REDIS_URL: "redis://localhost:6379/0"
       PGHOST: localhost
       PGUSER: postgres
       PGPASSWORD: postgres
@@ -57,6 +62,13 @@ jobs:
           # Tentativa extra com psql
           for i in {1..10}; do
             PGPASSWORD=postgres psql "host=localhost port=5432 user=postgres dbname=rails_test" -c "SELECT 1" && break || sleep 2
+          done
+      - name: Wait for Redis
+        run: |
+          for i in {1..60}; do
+            redis-cli -h localhost -p 6379 ping && break
+            echo "Redis not ready yet... ($i)"
+            sleep 2
           done
       - name: Install Ruby and gems
         uses: ruby/setup-ruby@55283cc23133118229fd3f97f9336ee23a179fcf # v1.146.0
