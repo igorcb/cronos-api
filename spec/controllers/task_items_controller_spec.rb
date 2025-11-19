@@ -71,5 +71,11 @@ RSpec.describe TaskItemsController, type: :controller do
       expect(response_body['totalHours']).to eq('01:07')
       expect(response_body['status']).to eq('pending')
     end
+
+    it 'returns 404 when task not found' do
+      get :index, params: { task_id: 99_999_999 }
+      expect(response).to have_http_status(:not_found)
+      expect(response.parsed_body['error']).to eq('Task not found')
+    end
   end
 end

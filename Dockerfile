@@ -1,8 +1,8 @@
-FROM ruby:3.1.3
+FROM ruby:3.3.10
 
 RUN apt-get update -qq && apt-get install -y \
   build-essential apt-utils libpq-dev \
-  nodejs postgresql-client vim yarn imagemagick libvips-tools locales
+  nodejs postgresql-client vim imagemagick libvips-tools locales
 
 RUN echo "pt_BR.UTF-8 UTF-8" > /etc/locale.gen && locale-gen pt_BR.UTF-8 && \
   /usr/sbin/update-locale LANG=pt_BR.UTF-8

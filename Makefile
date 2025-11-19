@@ -13,7 +13,7 @@ LOCAL_COMPOSE ?= $(shell \
 	|| echo docker-compose \
 )
 
-.PHONY: server console worker coverage test rspec bash debug-server debug-worker reset
+.PHONY: server console worker coverage test rspec bash debug-server debug-worker reset rubocop audit
 bash:
 	$(LOCAL_COMPOSE) exec web bash
 
@@ -64,3 +64,9 @@ test:
 
 rspec:
 	$(LOCAL_COMPOSE) exec web bash -lc 'bundle exec rspec -f documentation'
+
+rubocop:
+	$(LOCAL_COMPOSE) exec web bash -lc 'bundle check || bundle install && bundle exec rubocop'
+
+audit:
+	$(LOCAL_COMPOSE) exec web bash -lc 'bundle check || bundle install && bundle exec bundler-audit update && bundle exec bundler-audit check --verbose && mkdir -p tmp && bundle exec brakeman -A --no-pager --no-exit-on-warn --no-exit-on-error -o tmp/brakeman.json'

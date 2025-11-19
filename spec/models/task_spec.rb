@@ -231,8 +231,7 @@ RSpec.describe Task, type: :model do
     it 'serializa com companyName e softwareName nulos quando associações faltam' do
       task = described_class.create!(card)
       # Simula ausência de associações para cobrir os ramos &.
-      allow(task).to receive(:company).and_return(nil)
-      allow(task).to receive(:software).and_return(nil)
+      allow(task).to receive_messages(company: nil, software: nil)
 
       json = task.as_json
       expect(json[:companyName]).to be_nil

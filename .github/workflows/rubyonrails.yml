@@ -20,16 +20,30 @@ jobs:
           - "5432:5432"
         env:
           POSTGRES_DB: rails_test
-          POSTGRES_USER: rails
-          POSTGRES_PASSWORD: password
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd "pg_isready -U postgres || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 30
       redis:
         image: redis:alpine
         ports: ["6379:6379"]
-        options: --entrypoint redis-server         
+        options: >-
+          --entrypoint redis-server
+          --health-cmd "redis-cli ping || exit 1"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 30
     env:
       RAILS_ENV: test
-      DATABASE_URL: "postgres://rails:password@postgres:5432/rails_test"
-      REDIS_URL: "redis://redis:6379/0"
+      DATABASE_URL: "postgres://postgres:postgres@localhost:5432/rails_test"
+      REDIS_URL: "redis://localhost:6379/0"
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -37,25 +51,50 @@ jobs:
       - name: Install system dependencies (libpq and Postgres client)
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libpq-dev postgresql-client
+          sudo apt-get install -y --no-install-recommends libpq-dev postgresql-client redis-tools
       - name: Wait for Postgres
         run: |
-          for i in {1..30}; do
-            pg_isready -h postgres -p 5432 -U rails && break
-            echo "Postgres not ready yet..."
+          for i in {1..60}; do
+            pg_isready -h localhost -p 5432 -U postgres && break
+            echo "Postgres not ready yet... ($i)"
             sleep 2
           done
-          createdb -h postgres -U rails -E UTF8 --locale=en_US.utf8 rails_test || true
+          # Tentativa extra com psql
+          for i in {1..10}; do
+            PGPASSWORD=postgres psql "host=localhost port=5432 user=postgres dbname=rails_test" -c "SELECT 1" && break || sleep 2
+          done
+      - name: Wait for Redis
+        run: |
+          for i in {1..60}; do
+            redis-cli -h localhost -p 6379 ping && break
+            echo "Redis not ready yet... ($i)"
+            sleep 2
+          done
       - name: Install Ruby and gems
-        uses: ruby/setup-ruby@55283cc23133118229fd3f97f9336ee23a179fcf # v1.146.0
+        uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.1.3'
+          ruby-version: '3.2.2'
           bundler-cache: true
       # Add or replace database setup steps here
-      - name: Create Database
-        run: bin/rails db:create
-      - name: Migrate Database
-        run: bin/rails db:migrate
+      - name: Prepare Database (create, migrate, seed)
+        env:
+          PGHOST: ${{ env.PGHOST }}
+          PGUSER: ${{ secrets.CI_PGUSER }}
+          CI_PGUSER: ${{ vars.CI_PGUSER }}
+          PGPASSWORD: ${{ secrets.CI_PGPASSWORD }}
+          CI_PGPASSWORD: ${{ vars.CI_PGPASSWORD }}
+          DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+          CI_DATABASE_URL: ${{ vars.CI_DATABASE_URL }}
+        run: |
+          echo "PGHOST=${PGHOST}"
+          echo "Preparando banco..."
+          export DATABASE_URL="${DATABASE_URL:-${CI_DATABASE_URL:-${DATABASE_URL}}}"
+          export PGUSER="${PGUSER:-${CI_PGUSER:-${PGUSER}}}"
+          export PGPASSWORD="${PGPASSWORD:-${CI_PGPASSWORD:-${PGPASSWORD}}}"
+          if [ -z "${DATABASE_URL}" ]; then
+            export DATABASE_URL="postgres://postgres:postgres@localhost:5432/rails_test"
+          fi
+          RAILS_ENV=test bundle exec rails db:create db:migrate
       # Add or replace test runners here
       - name: Run tests
         run: bundle exec rspec spec --format Fuubar --color
@@ -67,10 +106,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Install Ruby and gems
-        uses: ruby/setup-ruby@55283cc23133118229fd3f97f9336ee23a179fcf # v1.146.0
+        uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.1.3'
+          ruby-version: '3.2.2'
           bundler-cache: true
+      - name: Set Rails master key
+        env:
+          RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
+        run: |
+          [ -z "$RAILS_MASTER_KEY" ] && echo "RAILS_MASTER_KEY não definido" && exit 1 || echo "Rails master key definido (não exibido)"
       - name: Install system dependencies for PostgreSQL client
         run: |
           sudo apt-get update
@@ -82,3 +126,30 @@ jobs:
         run: bundle exec brakeman -q -w2
       - name: Lint Ruby files
         run: bundle exec rubocop --parallel
+
+  deploy:
+    name: Deploy to Railsway
+    runs-on: ubuntu-22.04
+    needs: [test, lint]
+    if: github.ref == 'refs/heads/main' && needs.test.result == 'success' && needs.lint.result == 'success'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2.2'
+          bundler-cache: true
+      - name: Deploy
+        env:
+          RAILSWAY_API_KEY: ${{ secrets.RAILSWAY_API_KEY }}
+          RAILSWAY_APP_ID: ${{ secrets.RAILSWAY_APP_ID }}
+          RAILSWAY_DEPLOY_CMD: ${{ secrets.RAILSWAY_DEPLOY_CMD }}
+          RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
+        run: |
+          if [ -z "$RAILSWAY_DEPLOY_CMD" ]; then
+            echo "RAILSWAY_DEPLOY_CMD não definido em Secrets. Configure o comando de deploy."
+            exit 1
+          fi
+          echo "Iniciando deploy para Railsway..."
+          bash -lc "$RAILSWAY_DEPLOY_CMD"

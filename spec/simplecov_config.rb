@@ -52,26 +52,17 @@ SimpleCov.at_exit do
       color: '#764FA5',
     )
 
-    if cover_down
-      SimpleCov.result.format!
-      begin
-        FileUtils.chmod_R(0o755, SimpleCov.coverage_path)
-      rescue StandardError
-        # ignore permission errors
-      end
+    SimpleCov.result.format!
+    begin
+      FileUtils.chmod_R(0o755, SimpleCov.coverage_path)
+    rescue StandardError
+      # ignore permission errors
+    end
 
-      if covered_percent < PERCENT_LINES || branch_covered_percent < PERCENT_BRANCHES
-        puts 'COVERAGE TESTE DOWN'.colorize(:red)
-        exit(1)
-      end
+    if cover_down
+      puts 'COVERAGE TESTE DOWN'.colorize(:red)
+      exit(1)
     else
-      # Sempre gerar o relatório HTML mesmo quando a cobertura está OK
-      SimpleCov.result.format!
-      begin
-        FileUtils.chmod_R(0o755, SimpleCov.coverage_path)
-      rescue StandardError
-        # ignore permission errors
-      end
       puts 'COVERAGE TOTAL OK'.colorize(:green)
     end
   end

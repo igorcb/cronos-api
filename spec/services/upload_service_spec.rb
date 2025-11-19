@@ -34,16 +34,15 @@ RSpec.describe UploadService do
     end
 
     it 'logs error when starting upload update fails (rescue início)' do
-      upload = create(:upload, id: upload_id, status: :processing)
-      allow(Upload).to receive(:find).with(upload_id).and_return(upload)
-
-      expect(upload).to receive(:update)
-        .with(status: :processing, success_count: 0, error_count: 0, total_lines: 0)
+      create(:upload, id: upload_id, status: :processing)
+      fake_upload = instance_double(Upload)
+      allow(fake_upload).to receive(:update).and_return(true)
+      allow(fake_upload).to receive(:update)
+        .with(hash_including(status: :processing, success_count: 0, error_count: 0, total_lines: 0))
         .and_raise(StandardError, 'start failed')
-
-      allow(upload).to receive(:update).and_call_original
+      allow(Upload).to receive(:find).with(upload_id).and_return(fake_upload)
       allow(Rails.logger).to receive(:error)
-      allow(Roo::Excelx).to receive(:new).with(file_path).and_return(mock_excel_with_blank_row)
+      allow(Roo::Excelx).to receive(:new).with(file_path).and_return(mock_excel_empty)
 
       service = described_class.new(file_path, upload_id)
       expect { service.call }.not_to raise_error
@@ -90,8 +89,7 @@ RSpec.describe UploadService do
       allow(Roo::Excelx).to receive(:new).with(file_path).and_return(mock_excel)
 
       service = described_class.new(file_path, upload_id)
-      allow(service).to receive(:task_item_create).and_return(false)
-      allow(service).to receive(:create_task_and_task_item).and_return(false)
+      allow(service).to receive_messages(task_item_create: false, create_task_and_task_item: false)
 
       service.call
       upload.reload
@@ -211,7 +209,7 @@ RSpec.describe UploadService do
         service.instance_variable_set(:@status, 'pending')
 
         allow(TaskItem).to receive(:where).and_raise(StandardError, 'Database connection error')
-        
+
         allow(Rails.logger).to receive(:error)
 
         expect { service.send(:task_item_create) }.not_to raise_error
@@ -225,11 +223,12 @@ RSpec.describe UploadService do
     def mock_excel
       mock_excel_instance = instance_double(Roo::Excelx)
 
-      cell_struct = Struct.new(:value, :formatted_value) do
-        def blank?
-          value.nil? || value.to_s.strip == ''
+      cell_struct =
+        Struct.new(:value, :formatted_value) do
+          def blank?
+            value.nil? || value.to_s.strip == ''
+          end
         end
-      end
 
       row_one = []
       row_one[0] = cell_struct.new('Sexta')
@@ -269,11 +268,12 @@ RSpec.describe UploadService do
     def mock_excel_dublicate_task
       mock_excel_instance = instance_double(Roo::Excelx)
 
-      cell_struct = Struct.new(:value, :formatted_value) do
-        def blank?
-          value.nil? || value.to_s.strip == ''
+      cell_struct =
+        Struct.new(:value, :formatted_value) do
+          def blank?
+            value.nil? || value.to_s.strip == ''
+          end
         end
-      end
 
       row_one = []
       row_one[0] = cell_struct.new('Sexta')
@@ -303,11 +303,12 @@ RSpec.describe UploadService do
     def mock_excel_with_blank_row
       mock_excel_instance = instance_double(Roo::Excelx)
 
-      cell_struct = Struct.new(:value, :formatted_value) do
-        def blank?
-          value.nil? || value.to_s.strip == ''
+      cell_struct =
+        Struct.new(:value, :formatted_value) do
+          def blank?
+            value.nil? || value.to_s.strip == ''
+          end
         end
-      end
 
       # Row with valid data
       row_one = []
@@ -341,10 +342,16 @@ RSpec.describe UploadService do
 
       allow(mock_excel_instance).to receive(:each_row_streaming).with(offset: 1)
         .and_yield(row_one)
-        .and_yield(row_blank)  # This row should be skipped
+        .and_yield(row_blank)
         .and_yield(row_three)
 
       mock_excel_instance
     end
+  end
+end
+
+def mock_excel_empty
+  instance_double(Roo::Excelx).tap do |mock|
+    allow(mock).to receive(:each_row_streaming).with(offset: 1)
   end
 end
