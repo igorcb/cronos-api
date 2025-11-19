@@ -19,7 +19,8 @@ class TaskItemsController < ApplicationController
   private
 
   def set_task
-    @task = Task.find(params[:task_id])
+    @task = Task.find_by(id: params[:task_id])
+    render json: { error: 'Task not found' }, status: :not_found unless @task
   end
 
   def task_item_params

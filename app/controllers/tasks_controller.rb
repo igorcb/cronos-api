@@ -17,13 +17,15 @@ class TasksController < ApplicationController
         status: t.status,
         dateDelivered: t.date_delivered,
         observation: t.observation,
-        totalHours: t.total_hours.to_s
+        totalHours: t.total_hours.to_s,
       }
     }
   end
 
   def mark_delivered
-    task = Task.find(params[:id])
+    task = Task.find_by(id: params[:id])
+    return render json: { error: 'Task not found' }, status: :not_found unless task
+
     task.update!(status: 'delivered', date_delivered: Time.zone.today)
     render json: {
       id: task.id,
@@ -35,7 +37,7 @@ class TasksController < ApplicationController
       status: task.status,
       dateDelivered: task.date_delivered,
       observation: task.observation,
-      totalHours: task.total_hours.to_s
+      totalHours: task.total_hours.to_s,
     }
   rescue ActiveRecord::RecordInvalid => e
     render json: { error: e.message }, status: :unprocessable_entity

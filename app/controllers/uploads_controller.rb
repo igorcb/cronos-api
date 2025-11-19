@@ -1,10 +1,6 @@
 class UploadsController < ApplicationController
   # CSRF já desativado globalmente; garantir robustez caso callback não exista
   skip_before_action :verify_authenticity_token, raise: false
-  def new
-    render json: { message: 'new' }, status: :ok
-  end
-
   def index
     response.headers['Cache-Control'] = 'no-store'
     uploads = Upload.order(created_at: :desc)
@@ -28,24 +24,29 @@ class UploadsController < ApplicationController
     response.headers['Cache-Control'] = 'no-store'
     u = Upload.find(params[:id])
     render json: {
-      id: u.id,
-      fileName: u.file_name,
-      status: u.status,
-      totalLines: u.total_lines,
-      successCount: u.success_count,
-      errorCount: u.error_count,
-      errorMessages: u.error_messages,
-      processedCount: (u.success_count.to_i + u.error_count.to_i),
-      createdAt: u.created_at,
-      updatedAt: u.updated_at,
-    }, status: :ok
+             id: u.id,
+             fileName: u.file_name,
+             status: u.status,
+             totalLines: u.total_lines,
+             successCount: u.success_count,
+             errorCount: u.error_count,
+             errorMessages: u.error_messages,
+             processedCount: (u.success_count.to_i + u.error_count.to_i),
+             createdAt: u.created_at,
+             updatedAt: u.updated_at,
+           },
+           status: :ok
+  end
+
+  def new
+    render json: { message: 'new' }, status: :ok
   end
 
   def create
     file = params[:file]
-    # Salva o arquivo no sistema de arquivos temporário
-    temp_file_path = File.join(Rails.root, 'tmp', file.original_filename)
-
+    dir = Rails.root.join('tmp', 'uploads')
+    FileUtils.mkdir_p(dir)
+    temp_file_path = dir.join("#{SecureRandom.uuid}.xlsx")
     File.open(temp_file_path, 'wb') { |f| f.write(file.read) }
 
     upload = Upload.new(

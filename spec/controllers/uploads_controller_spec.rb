@@ -12,7 +12,7 @@ RSpec.describe UploadsController, type: :controller do
 
   describe 'GET #index' do
     it 'lists uploads with mapped fields' do
-      u1 = create(:upload, file_name: 'a.xlsx', status: :completed, total_lines: 2, success_count: 2, error_count: 0, error_messages: '')
+      create(:upload, file_name: 'a.xlsx', status: :completed, total_lines: 2, success_count: 2, error_count: 0, error_messages: '')
       u2 = create(:upload, file_name: 'b.xlsx', status: :failed, total_lines: 3, success_count: 1, error_count: 2, error_messages: "x\ny")
 
       get :index

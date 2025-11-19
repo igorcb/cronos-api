@@ -43,15 +43,16 @@ class UploadService
       @status = status_parse(row[8].value.downcase.strip)
 
       @task = Task.where(company_id: @company_id, software_id: @software_id, code: @code).first
-      #puts ">>>>>>>>>>>>> Data Abertura: #{@date_opened} - ID: #{@code} - Status: #{@status}"
+      # puts ">>>>>>>>>>>>> Data Abertura: #{@date_opened} - ID: #{@code} - Status: #{@status}"
       # byebug if @date_opened == '28/04/2025' && @code == '11334'
       processed_ok = false
       begin
-        if @task.present?
-          processed_ok = task_item_create
-        else
-          processed_ok = create_task_and_task_item
-        end
+        processed_ok =
+          if @task.present?
+            task_item_create
+          else
+            create_task_and_task_item
+          end
       rescue StandardError => e
         Rails.logger.error "Erro ao processar linha (code=#{@code}): #{e.message}"
         increment_error(e.message)

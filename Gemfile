@@ -10,7 +10,7 @@ gem 'jbuilder', '2.11.5'
 gem 'pg', '1.4.6 '
 gem 'puma', '>= 6.4.3'
 gem 'rack-cors', '2.0'
-gem 'rails', '7.0.8.7'
+gem 'rails', '7.1.5.2'
 gem 'rack', '>= 2.2.21'
 gem 'sprockets-rails', '3.4.2'
 gem 'stimulus-rails', '1.2.1'
@@ -36,8 +36,8 @@ group :development, :test do
   gem 'factory_bot_rails', '6.2'
   gem 'faker', '3.1.1'
   gem 'notifier', '1.2.2'
-  gem 'rspec', '3.12'
-gem 'rspec-rails', '6.0.1'
+  gem 'rspec', '3.13.0'
+  gem 'rspec-rails', '7.1.1'
   gem 'rubocop', '1.58.0', require: false
   gem 'rubocop-git', '0.1.3', require: false
   gem 'rubocop-performance', '1.19.1', require: false

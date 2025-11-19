@@ -74,10 +74,11 @@ RSpec.describe TasksController, type: :controller do
         status: 'opened',
         date_delivered: nil,
         observation: nil,
-        total_hours: '00:00'
+        total_hours: '00:00',
       )
 
-      allow(Task).to receive_message_chain(:includes, :order).and_return([task_double])
+      allow(Task).to receive(:includes).with(:company, :software).and_return(Task)
+      allow(Task).to receive(:order).with(created_at: :desc).and_return([task_double])
 
       get :index
       response_body = response.parsed_body
@@ -148,7 +149,7 @@ RSpec.describe TasksController, type: :controller do
 
       it 'returns HTTP 422 when update raises validation error' do
         task = create(:task, task_one)
-        allow(Task).to receive(:find).and_return(task)
+        allow(Task).to receive(:find_by).and_return(task)
         allow(task).to receive(:update!).and_raise(ActiveRecord::RecordInvalid.new(task))
 
         post :mark_delivered, params: { id: task.id }
@@ -156,8 +157,16 @@ RSpec.describe TasksController, type: :controller do
         expect(response.parsed_body['error']).to be_present
       end
 
+      it 'returns 404 when task not found' do
+        allow(Task).to receive(:find_by).and_return(nil)
+        post :mark_delivered, params: { id: 123 }
+        expect(response).to have_http_status(:not_found)
+        expect(response.parsed_body['error']).to eq('Task not found')
+      end
+
       it 'renders companyName/softwareName nulos quando associações ausentes (branches &.)' do
-        fake_task = double(
+        fake_task = instance_double(
+          Task,
           id: 999,
           company: nil,
           software: nil,
@@ -167,11 +176,11 @@ RSpec.describe TasksController, type: :controller do
           status: 'delivered',
           date_delivered: Date.current,
           observation: nil,
-          total_hours: '00:00'
+          total_hours: '00:00',
         )
 
         allow(fake_task).to receive(:update!).and_return(true)
-        allow(Task).to receive(:find).and_return(fake_task)
+        allow(Task).to receive(:find_by).and_return(fake_task)
 
         post :mark_delivered, params: { id: 999 }
         expect(response).to have_http_status(:ok)
