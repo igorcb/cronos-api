@@ -20,19 +20,19 @@ jobs:
           - "5432:5432"
         env:
           POSTGRES_DB: rails_test
-          POSTGRES_USER: rails
-          POSTGRES_PASSWORD: password
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
       redis:
         image: redis:alpine
         ports: ["6379:6379"]
         options: --entrypoint redis-server         
     env:
       RAILS_ENV: test
-      DATABASE_URL: "postgres://rails:password@postgres:5432/rails_test"
+      DATABASE_URL: "postgres://postgres:postgres@postgres:5432/rails_test"
       REDIS_URL: "redis://redis:6379/0"
       PGHOST: postgres
-      PGUSER: rails
-      PGPASSWORD: password
+      PGUSER: postgres
+      PGPASSWORD: postgres
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -48,7 +48,8 @@ jobs:
             echo "Postgres not ready yet..."
             sleep 2
           done
-          createdb -h postgres -U rails -E UTF8 --locale=en_US.utf8 rails_test || true
+          pg_isready -h postgres -p 5432 -U postgres
+          createdb -h postgres -U postgres -E UTF8 --locale=en_US.utf8 rails_test || true
       - name: Install Ruby and gems
         uses: ruby/setup-ruby@55283cc23133118229fd3f97f9336ee23a179fcf # v1.146.0
         with:
@@ -56,7 +57,15 @@ jobs:
           bundler-cache: true
       # Add or replace database setup steps here
       - name: Prepare Database (create, migrate, seed)
-        run: bin/rails db:prepare
+        env:
+          PGHOST: ${{ env.PGHOST }}
+          PGUSER: ${{ secrets.CI_PGUSER }}
+          PGPASSWORD: ${{ secrets.CI_PGPASSWORD }}
+          DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+        run: |
+          echo "PGHOST=$PGHOST"
+          echo "Preparando banco..."
+          RAILS_ENV=test bundle exec rails db:create db:migrate
       # Add or replace test runners here
       - name: Run tests
         run: bundle exec rspec spec --format Fuubar --color
