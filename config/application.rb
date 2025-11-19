@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
 require_relative 'boot'
-require 'active_support/concern' 
+require 'logger'
+require 'active_support/concern'
 require 'active_support/core_ext/module/attribute_accessors'
 require 'active_support/message_encryptor'
 require 'openssl'
 require 'base64'
 require 'rails'
-# Pick the frameworks you want:
 require 'active_model/railtie'
 require 'active_job/railtie'
 require 'active_record/railtie'
@@ -18,7 +18,6 @@ require 'action_mailbox/engine'
 require 'action_text/engine'
 require 'action_view/railtie'
 require 'action_cable/engine'
-# require "rails/test_unit/railtie"
 
 # Require the gems listed in Gemfile, including any gems
 # you've limited to :test, :development, or :production.

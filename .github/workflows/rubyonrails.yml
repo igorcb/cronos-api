@@ -51,7 +51,7 @@ jobs:
       - name: Install system dependencies (libpq and Postgres client)
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libpq-dev postgresql-client
+          sudo apt-get install -y --no-install-recommends libpq-dev postgresql-client redis-tools
       - name: Wait for Postgres
         run: |
           for i in {1..60}; do
