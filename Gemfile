@@ -3,7 +3,8 @@
 source 'https://rubygems.org'
 git_source(:github) { |_repo| "https://github.com/#{repo}.git" }
 
-ruby '3.3.10'
+# Suporta versões 3.2+ com preferência por 3.3.x
+ruby '>= 3.2.2'
 
 gem 'importmap-rails', '1.1.5'
 gem 'jbuilder', '2.14.1'
