@@ -22,15 +22,20 @@ jobs:
           POSTGRES_DB: rails_test
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd "pg_isready -U postgres || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 30
       redis:
         image: redis:alpine
         ports: ["6379:6379"]
         options: --entrypoint redis-server         
     env:
       RAILS_ENV: test
-      DATABASE_URL: "postgres://postgres:postgres@postgres:5432/rails_test"
+      DATABASE_URL: "postgres://postgres:postgres@localhost:5432/rails_test"
       REDIS_URL: "redis://redis:6379/0"
-      PGHOST: postgres
+      PGHOST: localhost
       PGUSER: postgres
       PGPASSWORD: postgres
     steps:
@@ -43,13 +48,15 @@ jobs:
           sudo apt-get install -y --no-install-recommends libpq-dev postgresql-client
       - name: Wait for Postgres
         run: |
-          for i in {1..30}; do
-            pg_isready -h postgres -p 5432 -U rails && break
-            echo "Postgres not ready yet..."
+          for i in {1..60}; do
+            pg_isready -h localhost -p 5432 -U postgres && break
+            echo "Postgres not ready yet... ($i)"
             sleep 2
           done
-          pg_isready -h postgres -p 5432 -U postgres
-          createdb -h postgres -U postgres -E UTF8 --locale=en_US.utf8 rails_test || true
+          # Tentativa extra com psql
+          for i in {1..10}; do
+            PGPASSWORD=postgres psql "host=localhost port=5432 user=postgres dbname=rails_test" -c "SELECT 1" && break || sleep 2
+          done
       - name: Install Ruby and gems
         uses: ruby/setup-ruby@55283cc23133118229fd3f97f9336ee23a179fcf # v1.146.0
         with:
