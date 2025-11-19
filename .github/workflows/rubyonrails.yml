@@ -30,6 +30,9 @@ jobs:
       RAILS_ENV: test
       DATABASE_URL: "postgres://rails:password@postgres:5432/rails_test"
       REDIS_URL: "redis://redis:6379/0"
+      PGHOST: postgres
+      PGUSER: rails
+      PGPASSWORD: password
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -52,10 +55,8 @@ jobs:
           ruby-version: '3.1.3'
           bundler-cache: true
       # Add or replace database setup steps here
-      - name: Create Database
-        run: bin/rails db:create
-      - name: Migrate Database
-        run: bin/rails db:migrate
+      - name: Prepare Database (create, migrate, seed)
+        run: bin/rails db:prepare
       # Add or replace test runners here
       - name: Run tests
         run: bundle exec rspec spec --format Fuubar --color
@@ -82,3 +83,29 @@ jobs:
         run: bundle exec brakeman -q -w2
       - name: Lint Ruby files
         run: bundle exec rubocop --parallel
+
+  deploy:
+    name: Deploy to Railsway
+    runs-on: ubuntu-22.04
+    needs: [test, lint]
+    if: github.ref == 'refs/heads/main' && needs.test.result == 'success' && needs.lint.result == 'success'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@55283cc23133118229fd3f97f9336ee23a179fcf
+        with:
+          ruby-version: '3.1.3'
+          bundler-cache: true
+      - name: Deploy
+        env:
+          RAILSWAY_API_KEY: ${{ secrets.RAILSWAY_API_KEY }}
+          RAILSWAY_APP_ID: ${{ secrets.RAILSWAY_APP_ID }}
+          RAILSWAY_DEPLOY_CMD: ${{ secrets.RAILSWAY_DEPLOY_CMD }}
+        run: |
+          if [ -z "$RAILSWAY_DEPLOY_CMD" ]; then
+            echo "RAILSWAY_DEPLOY_CMD não definido em Secrets. Configure o comando de deploy."
+            exit 1
+          fi
+          echo "Iniciando deploy para Railsway..."
+          bash -lc "$RAILSWAY_DEPLOY_CMD"
