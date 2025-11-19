@@ -4,13 +4,14 @@ require 'sidekiq/web'
 Rails.application.routes.draw do
   mount Sidekiq::Web => '/sidekiq'
   
-  resources :uploads, only: [:new, :create]
+  resources :uploads, only: [:new, :create, :index, :show]
   
   resources :tasks do
     resources :task_items
 
     member do
       post :mark_delivered
+      patch :mark_delivered
     end
   end
 

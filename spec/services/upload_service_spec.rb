@@ -33,7 +33,73 @@ RSpec.describe UploadService do
       expect(upload.error_messages).to eq('Error message')
     end
 
-    it 'handles case where company does not exist' do
+    it 'logs error when starting upload update fails (rescue início)' do
+      upload = create(:upload, id: upload_id, status: :processing)
+      allow(Upload).to receive(:find).with(upload_id).and_return(upload)
+
+      expect(upload).to receive(:update)
+        .with(status: :processing, success_count: 0, error_count: 0, total_lines: 0)
+        .and_raise(StandardError, 'start failed')
+
+      allow(upload).to receive(:update).and_call_original
+      allow(Rails.logger).to receive(:error)
+      allow(Roo::Excelx).to receive(:new).with(file_path).and_return(mock_excel_with_blank_row)
+
+      service = described_class.new(file_path, upload_id)
+      expect { service.call }.not_to raise_error
+      expect(Rails.logger).to have_received(:error).with("Falha ao iniciar upload ##{upload_id}: start failed")
+    end
+
+    it 'handles row processing error and records increment_error (rescue por linha)' do
+      upload = create(:upload, id: upload_id, status: :processing)
+      company = create(:company, name: 'NobeSistemas', value: 10)
+      software = create(:software, company:, name: 'Almoxarifado')
+      Task.create(company:, software:, code: '2267', name: 'T', date_opened: '01/09/2023', status: 'opened')
+
+      allow(Rails.logger).to receive(:error)
+      allow(Roo::Excelx).to receive(:new).with(file_path).and_return(mock_excel)
+
+      service = described_class.new(file_path, upload_id)
+      allow(service).to receive(:task_item_create).and_raise(StandardError, 'row failed')
+
+      service.call
+      upload.reload
+      expect(upload.error_count).to be >= 1
+      # error_messages guarda acumulado; split por quebra real
+      expect(upload.error_messages.split("\n")).to include('row failed')
+      expect(Rails.logger).to have_received(:error).with(/Erro ao processar linha \(code=2267\): row failed/)
+    end
+
+    it 'append_error_message com existente presente acumula e unifica' do
+      service = described_class.new('f.xlsx', 1)
+      result = service.send(:append_error_message, "e1\ne2", 'e2')
+      expect(result.split("\n")).to match_array(%w[e1 e2])
+    end
+
+    it 'append_error_message com existente ausente inicia lista' do
+      service = described_class.new('f.xlsx', 1)
+      result = service.send(:append_error_message, nil, 'e1')
+      expect(result).to eq('e1')
+    end
+
+    it 'não incrementa sucesso quando processed_ok é falso' do
+      upload = create(:upload, id: upload_id, status: :processing)
+      company = create(:company, name: 'NobeSistemas', value: 10)
+      create(:software, company:, name: 'Almoxarifado')
+
+      allow(Roo::Excelx).to receive(:new).with(file_path).and_return(mock_excel)
+
+      service = described_class.new(file_path, upload_id)
+      allow(service).to receive(:task_item_create).and_return(false)
+      allow(service).to receive(:create_task_and_task_item).and_return(false)
+
+      service.call
+      upload.reload
+      expect(upload.success_count.to_i).to eq(0)
+      expect(upload.total_lines.to_i).to eq(3)
+    end
+
+    it 'continues processing when company does not exist (status completed)' do
       upload = create(:upload, id: upload_id, status: :processing)
       Company.where(name: 'NobeSistemas').destroy_all
       company = create(:company, name: 'Example Company', value: 10)
@@ -45,11 +111,10 @@ RSpec.describe UploadService do
 
       service.call
       upload.reload
-      expect(upload.status).to eq('failed')
-      expect(upload.error_messages).to eq('You cannot call create unless the parent is saved')
+      expect(upload.status).to eq('completed')
     end
 
-    it 'handles case where software does not exist' do
+    it 'continues processing when software does not exist (status completed)' do
       upload = create(:upload, id: upload_id, status: :processing)
       create(:company, name: 'NobeSistemas', value: 10)
       Software.where(name: 'Almoxarifado').destroy_all
@@ -60,8 +125,22 @@ RSpec.describe UploadService do
 
       service.call
       upload.reload
-      expect(upload.status).to eq('failed')
-      expect(upload.error_messages).to eq('You cannot call create unless the parent is saved')
+      expect(upload.status).to eq('completed')
+    end
+
+    it 'skips rows where row[10] is blank' do
+      upload = create(:upload, id: upload_id, status: :processing)
+      company = create(:company, name: 'NobeSistemas', value: 10)
+      create(:software, company:, name: 'Almoxarifado')
+
+      allow(Roo::Excelx).to receive(:new).with(file_path).and_return(mock_excel_with_blank_row)
+
+      service = described_class.new(file_path, upload_id)
+
+      service.call
+      upload.reload
+      expect(upload.status).to eq('completed')
+      expect(upload.total_lines).to eq(2) # Only 2 valid rows, 1 blank row skipped
     end
 
     describe '#task_item_create' do
@@ -114,36 +193,156 @@ RSpec.describe UploadService do
 
         expect { service.send(:task_item_create) }.to change { TaskItem.count }.by(0)
       end
+
+      it 'handles StandardError exception in task_item_create and logs error' do
+        upload_id = 1
+        file_path = 'example.xlsx'
+        service = described_class.new(file_path, upload_id)
+
+        company = Company.create(name: 'NobeSistemas', value: 10)
+        software = Software.create(company:, name: 'Almoxarifado')
+        task = Task.create(company:, software:, code: '123', name: 'Task example', date_opened: '01/09/2023', status: 'opened')
+
+        service.instance_variable_set(:@company_id, company.id)
+        service.instance_variable_set(:@software_id, software.id)
+        service.instance_variable_set(:@task, task)
+        service.instance_variable_set(:@date_start, '2023-01-01')
+        service.instance_variable_set(:@hour_start, '12:00')
+        service.instance_variable_set(:@status, 'pending')
+
+        allow(TaskItem).to receive(:where).and_raise(StandardError, 'Database connection error')
+        
+        allow(Rails.logger).to receive(:error)
+
+        expect { service.send(:task_item_create) }.not_to raise_error
+
+        expect(Rails.logger).to have_received(:error).with('Erro ao verificar TaskItem existente: Database connection error')
+      end
     end
 
     private
 
     def mock_excel
       mock_excel_instance = instance_double(Roo::Excelx)
-      headers = ['Dia Semana', 'Data', 'Inicio', 'Fim', 'Tempo', 'Total dia', 'Projeto', 'Status', 'Horas Aprovadas', 'Atividade']
-      record_one = ['Sexta', '01/09/2023', '07:12', '08:28', '01:16', '00:00', 'Almoxarifado', 'Finalizado', 'SN', '2267: Mensagens de erro ou sucesso, não estã estilizadas']
-      record_two = ['Sexta', '01/09/2023', '08:29', '10:22', '01:53', '00:00', 'Almoxarifado', 'Finalizado', 'SN', '2180: Tela Solicitante - Erro no cadastro']
-      record_three = ['Sexta', '01/09/2023', '10:23', '12:38', '02:15', '00:00', 'Almoxarifado', 'Finalizado', 'SN', '2254: Exclusão de Transferências - Erro no cadastro']
 
-      allow(mock_excel_instance).to receive(:each_with_index).and_yield(headers, 0)
-        .and_yield(record_one, 1)
-        .and_yield(record_two, 2)
-        .and_yield(record_three, 3)
-      allow(Roo::Excelx).to receive(:new).and_return(mock_excel_instance)
+      cell_struct = Struct.new(:value, :formatted_value) do
+        def blank?
+          value.nil? || value.to_s.strip == ''
+        end
+      end
+
+      row_one = []
+      row_one[0] = cell_struct.new('Sexta')
+      row_one[1] = cell_struct.new('01/09/2023', '01/09/2023')
+      row_one[2] = cell_struct.new('07:12', '07:12')
+      row_one[3] = cell_struct.new('08:28', '08:28')
+      row_one[7] = cell_struct.new('Almoxarifado')
+      row_one[8] = cell_struct.new('Finalizado')
+      row_one[10] = cell_struct.new('2267: Mensagens de erro ou sucesso, não estã estilizadas')
+
+      row_two = []
+      row_two[0] = cell_struct.new('Sexta')
+      row_two[1] = cell_struct.new('01/09/2023', '01/09/2023')
+      row_two[2] = cell_struct.new('08:29', '08:29')
+      row_two[3] = cell_struct.new('10:22', '10:22')
+      row_two[7] = cell_struct.new('Almoxarifado')
+      row_two[8] = cell_struct.new('Finalizado')
+      row_two[10] = cell_struct.new('2180: Tela Solicitante - Erro no cadastro')
+
+      row_three = []
+      row_three[0] = cell_struct.new('Sexta')
+      row_three[1] = cell_struct.new('01/09/2023', '01/09/2023')
+      row_three[2] = cell_struct.new('10:23', '10:23')
+      row_three[3] = cell_struct.new('12:38', '12:38')
+      row_three[7] = cell_struct.new('Almoxarifado')
+      row_three[8] = cell_struct.new('Finalizado')
+      row_three[10] = cell_struct.new('2254: Exclusão de Transferências - Erro no cadastro')
+
+      allow(mock_excel_instance).to receive(:each_row_streaming).with(offset: 1)
+        .and_yield(row_one)
+        .and_yield(row_two)
+        .and_yield(row_three)
 
       mock_excel_instance
     end
 
     def mock_excel_dublicate_task
       mock_excel_instance = instance_double(Roo::Excelx)
-      headers = ['Dia Semana', 'Data', 'Inicio', 'Fim', 'Tempo', 'Total dia', 'Projeto', 'Status', 'Horas Aprovadas', 'Atividade']
-      record_one = ['Sexta', '01/09/2023', '08:29', '10:22', '01:53', '00:00', 'Almoxarifado', 'Finalizado', 'SN', '2180: Tela Solicitante - Erro no cadastro']
-      record_two = ['Sexta', '01/09/2023', '08:29', '10:22', '01:53', '00:00', 'Almoxarifado', 'Finalizado', 'SN', '2180: Tela Solicitante - Erro no cadastro']
 
-      allow(mock_excel_instance).to receive(:each_with_index).and_yield(headers, 0)
-        .and_yield(record_one, 1)
-        .and_yield(record_two, 2)
-      allow(Roo::Excelx).to receive(:new).and_return(mock_excel_instance)
+      cell_struct = Struct.new(:value, :formatted_value) do
+        def blank?
+          value.nil? || value.to_s.strip == ''
+        end
+      end
+
+      row_one = []
+      row_one[0] = cell_struct.new('Sexta')
+      row_one[1] = cell_struct.new('01/09/2023', '01/09/2023')
+      row_one[2] = cell_struct.new('08:29', '08:29')
+      row_one[3] = cell_struct.new('10:22', '10:22')
+      row_one[7] = cell_struct.new('Almoxarifado')
+      row_one[8] = cell_struct.new('Finalizado')
+      row_one[10] = cell_struct.new('2180: Tela Solicitante - Erro no cadastro')
+
+      row_two = []
+      row_two[0] = cell_struct.new('Sexta')
+      row_two[1] = cell_struct.new('01/09/2023', '01/09/2023')
+      row_two[2] = cell_struct.new('08:29', '08:29')
+      row_two[3] = cell_struct.new('10:22', '10:22')
+      row_two[7] = cell_struct.new('Almoxarifado')
+      row_two[8] = cell_struct.new('Finalizado')
+      row_two[10] = cell_struct.new('2180: Tela Solicitante - Erro no cadastro')
+
+      allow(mock_excel_instance).to receive(:each_row_streaming).with(offset: 1)
+        .and_yield(row_one)
+        .and_yield(row_two)
+
+      mock_excel_instance
+    end
+
+    def mock_excel_with_blank_row
+      mock_excel_instance = instance_double(Roo::Excelx)
+
+      cell_struct = Struct.new(:value, :formatted_value) do
+        def blank?
+          value.nil? || value.to_s.strip == ''
+        end
+      end
+
+      # Row with valid data
+      row_one = []
+      row_one[0] = cell_struct.new('Sexta')
+      row_one[1] = cell_struct.new('01/09/2023', '01/09/2023')
+      row_one[2] = cell_struct.new('07:12', '07:12')
+      row_one[3] = cell_struct.new('08:28', '08:28')
+      row_one[7] = cell_struct.new('Almoxarifado')
+      row_one[8] = cell_struct.new('Finalizado')
+      row_one[10] = cell_struct.new('2267: Mensagens de erro ou sucesso, não estã estilizadas')
+
+      # Row with blank row[10] - this should be skipped
+      row_blank = []
+      row_blank[0] = cell_struct.new('Sexta')
+      row_blank[1] = cell_struct.new('01/09/2023', '01/09/2023')
+      row_blank[2] = cell_struct.new('08:29', '08:29')
+      row_blank[3] = cell_struct.new('10:22', '10:22')
+      row_blank[7] = cell_struct.new('Almoxarifado')
+      row_blank[8] = cell_struct.new('Finalizado')
+      row_blank[10] = cell_struct.new('') # Blank value
+
+      # Another row with valid data
+      row_three = []
+      row_three[0] = cell_struct.new('Sexta')
+      row_three[1] = cell_struct.new('01/09/2023', '01/09/2023')
+      row_three[2] = cell_struct.new('10:23', '10:23')
+      row_three[3] = cell_struct.new('12:38', '12:38')
+      row_three[7] = cell_struct.new('Almoxarifado')
+      row_three[8] = cell_struct.new('Finalizado')
+      row_three[10] = cell_struct.new('2254: Exclusão de Transferências - Erro no cadastro')
+
+      allow(mock_excel_instance).to receive(:each_row_streaming).with(offset: 1)
+        .and_yield(row_one)
+        .and_yield(row_blank)  # This row should be skipped
+        .and_yield(row_three)
 
       mock_excel_instance
     end

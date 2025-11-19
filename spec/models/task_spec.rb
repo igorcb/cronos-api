@@ -211,6 +211,103 @@ RSpec.describe Task, type: :model do
     end
   end
 
+  describe '#as_json' do
+    it 'serializa com companyName e softwareName presentes' do
+      task = described_class.create!(card)
+
+      json = task.as_json
+      expect(json[:id]).to eq(task.id)
+      expect(json[:companyName]).to eq(company.name)
+      expect(json[:softwareName]).to eq(software.name)
+      expect(json[:code]).to eq('1204')
+      expect(json[:name]).to eq('Card Example')
+      expect(json[:dateOpened]).to eq(task.date_opened)
+      expect(json[:status]).to eq('opened')
+      expect(json[:dateDelivered]).to eq(task.date_delivered)
+      expect(json[:totalHours]).to eq(task.total_hours)
+      expect(json[:observation]).to be_nil
+    end
+
+    it 'serializa com companyName e softwareName nulos quando associações faltam' do
+      task = described_class.create!(card)
+      # Simula ausência de associações para cobrir os ramos &.
+      allow(task).to receive(:company).and_return(nil)
+      allow(task).to receive(:software).and_return(nil)
+
+      json = task.as_json
+      expect(json[:companyName]).to be_nil
+      expect(json[:softwareName]).to be_nil
+    end
+  end
+
+  describe '#update_status (branches)' do
+    it 'sem itens retorna opened' do
+      task = described_class.create!(card)
+      expect(task.update_status).to eq('opened')
+    end
+
+    it 'com último item finalized atualiza para finalized' do
+      task = described_class.create!(card)
+      task.task_items.create(
+        date_start: '2023-10-04',
+        hour_start: '2023-10-04 19:43:37',
+        date_end: '2023-10-04',
+        hour_end: '2023-10-04 19:47:37',
+        status: 'finalized',
+      )
+      task.update_status
+      expect(task.status).to eq('finalized')
+    end
+
+    it 'com último item pendente atualiza para reopened' do
+      task = described_class.create!(card)
+      task.task_items.create(
+        date_start: '2023-10-04',
+        hour_start: '2023-10-04 19:43:37',
+        date_end: '2023-10-04',
+        hour_end: '2023-10-04 19:47:37',
+        status: 'pending',
+      )
+      task.update_status
+      expect(task.status).to eq('reopened')
+    end
+  end
+
+  describe '#mark_as_delivery (branches)' do
+    it 'retorna erro quando não possui itens' do
+      task = described_class.create!(card)
+      task.mark_as_delivery
+      expect(task.errors[:base]).to include('Cannot mark a task as delivered because it has no task_item')
+    end
+
+    it 'retorna erro quando último item não está finalizado' do
+      task = described_class.create!(card)
+      task.task_items.create(
+        date_start: '2023-10-04',
+        hour_start: '2023-10-04 19:43:37',
+        date_end: '2023-10-04',
+        hour_end: '2023-10-04 19:47:37',
+        status: 'pending',
+      )
+      task.mark_as_delivery
+      expect(task.errors[:base]).to include('The status of the last task is not finished')
+    end
+
+    it 'marca entregue quando último item finalizado' do
+      task = described_class.create!(card)
+      task.task_items.create(
+        date_start: '2023-10-04',
+        hour_start: '2023-10-04 19:43:37',
+        date_end: '2023-10-04',
+        hour_end: '2023-10-04 19:47:37',
+        status: 'finalized',
+      )
+      task.mark_as_delivery
+      expect(task.status).to eq('delivered')
+      expect(task.date_delivered).to eq(Date.current)
+    end
+  end
+
   it 'total hours all task ' do
     task = described_class.create!(card)
     task.task_items.create(

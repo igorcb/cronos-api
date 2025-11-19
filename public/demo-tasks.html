@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Demo Tasks - Atualização sem Reload</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; }
+      h1 { font-size: 20px; }
+      table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+      th, td { border: 1px solid #ddd; padding: 8px; }
+      th { background: #f6f6f6; text-align: left; }
+      tr:nth-child(even) { background: #fafafa; }
+      .status { font-weight: 600; }
+      .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; }
+      .badge.opened { background: #e6f4ff; color: #0057b8; }
+      .badge.finalized { background: #fff3cd; color: #664d03; }
+      .badge.reopened { background: #e2e3e5; color: #383d41; }
+      .badge.delivered { background: #d1e7dd; color: #0f5132; }
+      button { padding: 6px 10px; font-size: 14px; cursor: pointer; }
+      .actions { display: flex; gap: 8px; }
+      .error { color: #b00020; margin-top: 8px; }
+      .success { color: #0f5132; margin-top: 8px; }
+      .toolbar { display: flex; gap: 8px; align-items: center; }
+      .toolbar input { padding: 6px; }
+    </style>
+  </head>
+  <body>
+    <h1>Tasks Demo (sem reload) — cronos-api</h1>
+    <div class="toolbar">
+      <label for="apiBase">API base:</label>
+      <input id="apiBase" size="28" value="http://localhost:4001" />
+      <button id="refresh">Atualizar lista</button>
+      <span id="feedback" aria-live="polite"></span>
+    </div>
+
+    <table aria-label="Lista de tasks">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Código</th>
+          <th>Nome</th>
+          <th>Empresa</th>
+          <th>Software</th>
+          <th>Status</th>
+          <th>Data Entrega</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+
+    <script>
+      const rows = document.getElementById('rows');
+      const apiBaseInput = document.getElementById('apiBase');
+      const feedback = document.getElementById('feedback');
+      const refreshBtn = document.getElementById('refresh');
+
+      function statusBadge(status) {
+        const s = String(status || '').toLowerCase();
+        return `<span class="badge ${s}">${s || '-'}</span>`;
+      }
+
+      function fmtDate(dateStr) {
+        if (!dateStr) return '';
+        // Backend retorna Date como 'YYYY-MM-DD'
+        return dateStr;
+      }
+
+      async function fetchTasks() {
+        feedback.textContent = 'Carregando...';
+        const base = apiBaseInput.value.trim();
+        const res = await fetch(`${base}/tasks`);
+        if (!res.ok) {
+          feedback.textContent = `Erro ao carregar: ${res.status}`;
+          return;
+        }
+        const data = await res.json();
+        renderRows(data);
+        feedback.textContent = `Carregado ${data.length} task(s).`;
+      }
+
+      function renderRows(tasks) {
+        rows.innerHTML = '';
+        tasks.forEach(task => {
+          const tr = document.createElement('tr');
+          tr.id = `task-${task.id}`;
+          tr.innerHTML = `
+            <td>${task.id}</td>
+            <td>${task.code || ''}</td>
+            <td>${task.name || ''}</td>
+            <td>${task.companyName || ''}</td>
+            <td>${task.softwareName || ''}</td>
+            <td class="status">${statusBadge(task.status)}</td>
+            <td class="dateDelivered">${fmtDate(task.dateDelivered)}</td>
+            <td class="actions">
+              <button data-id="${task.id}" class="deliver-btn">Marcar Entregue</button>
+            </td>
+          `;
+          rows.appendChild(tr);
+
+          const btn = tr.querySelector('.deliver-btn');
+          btn.disabled = String(task.status).toLowerCase() === 'delivered';
+          btn.addEventListener('click', () => markDelivered(task.id));
+        });
+      }
+
+      async function markDelivered(id) {
+        feedback.textContent = 'Marcando como entregue...';
+        const base = apiBaseInput.value.trim();
+        // Suporta POST e PATCH conforme rotas atuais
+        const url = `${base}/tasks/${id}/mark_delivered.json`;
+        const res = await fetch(url, { method: 'PATCH', headers: { 'Accept': 'application/json' } });
+        let body;
+        try { body = await res.json(); } catch (_) { body = null; }
+
+        if (!res.ok) {
+          const msg = Array.isArray(body) ? body.join(', ') : (body || 'Erro desconhecido');
+          feedback.textContent = `Falha: ${msg}`;
+          return;
+        }
+
+        // Atualiza a linha na tabela sem reload
+        const tr = document.getElementById(`task-${id}`);
+        if (tr && body) {
+          const statusCell = tr.querySelector('.status');
+          const dateCell = tr.querySelector('.dateDelivered');
+          const btn = tr.querySelector('.deliver-btn');
+          statusCell.innerHTML = statusBadge(body.status);
+          dateCell.textContent = fmtDate(body.dateDelivered);
+          if (btn) btn.disabled = true;
+        }
+        feedback.textContent = 'Status atualizado com sucesso.';
+      }
+
+      refreshBtn.addEventListener('click', fetchTasks);
+      fetchTasks();
+    </script>
+  </body>
+</html>

@@ -31,3 +31,6 @@ config/database.yml
 /coverage
 /data
 /vendor
+
+/config/master.key
+.env

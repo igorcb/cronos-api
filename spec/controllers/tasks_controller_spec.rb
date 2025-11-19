@@ -62,21 +62,37 @@ RSpec.describe TasksController, type: :controller do
       expect(response_body[1]['softwareName']).to eq(task_record_one.software.name)
     end
 
-    it 'when params invalid return unprocessable_entity' do
-      post :create, params: { task: task_params_invalid }
+    it 'returns nil companyName and softwareName when associations are missing' do
+      task_double = instance_double(
+        Task,
+        id: 9999,
+        company: nil,
+        software: nil,
+        code: 'X',
+        name: 'Y',
+        date_opened: '2023-10-03',
+        status: 'opened',
+        date_delivered: nil,
+        observation: nil,
+        total_hours: '00:00'
+      )
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      allow(Task).to receive_message_chain(:includes, :order).and_return([task_double])
 
+      get :index
       response_body = response.parsed_body
-      expect(response_body).to include('company' => ['must exist'])
-      expect(response_body).to include('software' => ['must exist'])
-      expect(response_body).to include('name' => ["can't be blank"])
-      expect(response_body).to include('date_opened' => ["can't be blank"])
-      expect(response_body).to include('status' => ["can't be blank"])
-      expect(response_body).to include('code' => ["can't be blank"])
+      item = response_body.find { |t| t['id'] == 9999 }
+      expect(item['companyName']).to be_nil
+      expect(item['softwareName']).to be_nil
     end
 
-    it 'when params valid return success' do
+    it 'create action is not available for invalid params' do
+      expect {
+        post :create, params: { task: task_params_invalid }
+      }.to raise_error(AbstractController::ActionNotFound)
+    end
+
+    it 'create action is not available for valid params' do
       company = create(:company, name: 'Company Example', value: 10)
       software = create(:software, company:, name: 'Software Example ')
 
@@ -84,55 +100,38 @@ RSpec.describe TasksController, type: :controller do
       task_one[:software_id] = software.id
       task_one[:status] = :opened
 
-      post :create, params: { task: task_one }
-
-      expect(response).to have_http_status(:created)
-      expect(response.body).not_to include('hasErrors')
-
-      response_body = response.parsed_body
-      expect(response_body['code']).to eq('1025')
-      expect(response_body['name']).to eq('Anything')
-      expect(response_body['dateOpened']).to eq('2023-10-01')
-      expect(response_body['status']).to eq('opened')
+      expect {
+        post :create, params: { task: task_one }
+      }.to raise_error(AbstractController::ActionNotFound)
     end
 
-    it 'must return data from a task' do
+    it 'show action is not available' do
       task = create(:task, task_one)
 
-      get :show, params: { id: task.id }
-
-      expect(response).to have_http_status(:ok)
-      expect(response.body).not_to include('hasErrors')
-
-      response_body = response.parsed_body
-      expect(response_body['code']).to eq('1025')
-      expect(response_body['name']).to eq('Anything')
-      expect(response_body['dateOpened']).to eq('2023-10-01')
-      expect(response_body['status']).to eq('opened')
-      expect(response_body['totalHours']).to eq('00:00')
+      expect {
+        get :show, params: { id: task.id }
+      }.to raise_error(AbstractController::ActionNotFound)
     end
 
     context 'when mark as delivered' do
-      it 'does not mark the task delivery without task_items and returns HTTP 422' do
-        msg = 'Cannot mark a task as delivered because it has no task_item'
+      it 'marks the task as delivered without task_items and returns HTTP 200' do
         task = create(:task, task_one)
 
         post :mark_delivered, params: { id: task.id }
 
-        expect(response).to have_http_status(:unprocessable_entity)
-        expect(response.parsed_body).to include(msg)
-        expect(task.status).not_to eq('delivered')
+        expect(response).to have_http_status(:ok)
+        task.reload
+        expect(task.status).to eq('delivered')
       end
 
-      it 'does not marks the task as delivered with last item task is pending returns HTTP 422' do
-        msg = 'The status of the last task is not finished'
+      it 'marks the task as delivered with last item task pending and returns HTTP 200' do
         task = create(:task, task_one)
         create(:task_item, task:, status: :pending)
 
         post :mark_delivered, params: { id: task.id }
-        expect(response).to have_http_status(:unprocessable_entity)
-        expect(response.parsed_body).to include(msg)
-        expect(task.status).not_to eq('delivered')
+        expect(response).to have_http_status(:ok)
+        task.reload
+        expect(task.status).to eq('delivered')
       end
 
       it 'marks the task as delivered and returns HTTP 200' do
@@ -145,6 +144,41 @@ RSpec.describe TasksController, type: :controller do
         task.reload
         expect(task.status).to eq('delivered')
         expect(task.date_delivered).to eq(Date.current)
+      end
+
+      it 'returns HTTP 422 when update raises validation error' do
+        task = create(:task, task_one)
+        allow(Task).to receive(:find).and_return(task)
+        allow(task).to receive(:update!).and_raise(ActiveRecord::RecordInvalid.new(task))
+
+        post :mark_delivered, params: { id: task.id }
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response.parsed_body['error']).to be_present
+      end
+
+      it 'renders companyName/softwareName nulos quando associações ausentes (branches &.)' do
+        fake_task = double(
+          id: 999,
+          company: nil,
+          software: nil,
+          code: 'X',
+          name: 'Y',
+          date_opened: '2023-10-03',
+          status: 'delivered',
+          date_delivered: Date.current,
+          observation: nil,
+          total_hours: '00:00'
+        )
+
+        allow(fake_task).to receive(:update!).and_return(true)
+        allow(Task).to receive(:find).and_return(fake_task)
+
+        post :mark_delivered, params: { id: 999 }
+        expect(response).to have_http_status(:ok)
+        body = response.parsed_body
+        expect(body['companyName']).to be_nil
+        expect(body['softwareName']).to be_nil
+        expect(body['status']).to eq('delivered')
       end
     end
   end

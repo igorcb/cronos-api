@@ -1,7 +1,11 @@
 # frozen_string_literal: true
 
 require_relative 'boot'
-
+require 'active_support/concern' 
+require 'active_support/core_ext/module/attribute_accessors'
+require 'active_support/message_encryptor'
+require 'openssl'
+require 'base64'
 require 'rails'
 # Pick the frameworks you want:
 require 'active_model/railtie'

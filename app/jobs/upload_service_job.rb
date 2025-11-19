@@ -1,6 +1,7 @@
 class UploadServiceJob < ApplicationJob
+  queue_as :default
+
   def perform(file_path, upload_id)
-    service = UploadService.new(file_path, upload_id)
-    service.call
+    UploadService.new(file_path, upload_id).call
   end
 end

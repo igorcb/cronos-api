@@ -6,18 +6,22 @@ RUN apt-get update -qq && apt-get install -y \
 
 RUN echo "pt_BR.UTF-8 UTF-8" > /etc/locale.gen && locale-gen pt_BR.UTF-8 && \
   /usr/sbin/update-locale LANG=pt_BR.UTF-8
-ENV LC_ALL=pt_BR.UTF-8
 
-ENV APP_PATH=/app
-RUN mkdir -p $APP_PATH
-WORKDIR $APP_PATH
+RUN mkdir -p /app
+WORKDIR /app
 
-COPY Gemfile Gemfile.lock $APP_PATH/
-RUN gem install bundler && bundle install 
+COPY Gemfile Gemfile.lock /app/
+RUN bundle install
 
-COPY entrypoint.sh /usr/bin/
-RUN chmod +x /usr/bin/entrypoint.sh
+COPY . /app/
 
-EXPOSE 4001
+# Cria o entrypoint diretamente
+RUN echo '#!/bin/bash' > /entrypoint.sh && \
+  echo 'set -e' >> /entrypoint.sh && \
+  echo 'rm -f tmp/pids/server.pid' >> /entrypoint.sh && \
+  echo 'bundle check || bundle install' >> /entrypoint.sh && \
+  echo 'exec "$@"' >> /entrypoint.sh && \
+  chmod +x /entrypoint.sh
 
-ENTRYPOINT ["entrypoint.sh"]
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["bundle", "exec", "rails", "s", "-p", "4001", "-b", "0.0.0.0"]

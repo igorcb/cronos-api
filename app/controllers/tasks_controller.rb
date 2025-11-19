@@ -1,51 +1,44 @@
 class TasksController < ApplicationController
-  before_action :set_task, only: %i[show mark_delivered]
+  # Se estiver sem cookies no front, evite bloquear por CSRF:
+  # protect_from_forgery with: :null_session
 
   def index
-    @tasks = Task.order(date_opened: :desc)
-    render json: @tasks, status: :ok
-  end
-
-  def show
-    render json: @task, status: :ok
-  end
-
-  def create
-    @task = Task.new(task_params)
-
-    if @task.save
-      render json: @task, status: :created
-    else
-      render json: @task.errors.messages, status: :unprocessable_entity
-    end
+    # Evita cache para que a lista de tarefas sempre reflita o estado atual
+    response.headers['Cache-Control'] = 'no-store'
+    tasks = Task.includes(:company, :software).order(created_at: :desc)
+    render json: tasks.map { |t|
+      {
+        id: t.id,
+        companyName: t.company&.name,
+        softwareName: t.software&.name,
+        code: t.code,
+        name: t.name,
+        dateOpened: t.date_opened,
+        status: t.status,
+        dateDelivered: t.date_delivered,
+        observation: t.observation,
+        totalHours: t.total_hours.to_s
+      }
+    }
   end
 
   def mark_delivered
-    @task.mark_as_delivery
-    if @task.errors.empty?
-      head :ok
-    else
-      render json: @task.errors.messages[:base], status: :unprocessable_entity
-    end
-  end
-
-  private
-
-  def set_task
-    @task = Task.find(params[:id])
-  end
-
-  def task_params
-    params.require(:task).permit(
-      :company_id,
-      :software_id,
-      :code,
-      :name,
-      :description,
-      :date_opened,
-      :status,
-      :date_delivered,
-      :observation,
-    )
+    task = Task.find(params[:id])
+    task.update!(status: 'delivered', date_delivered: Time.zone.today)
+    render json: {
+      id: task.id,
+      companyName: task.company&.name,
+      softwareName: task.software&.name,
+      code: task.code,
+      name: task.name,
+      dateOpened: task.date_opened,
+      status: task.status,
+      dateDelivered: task.date_delivered,
+      observation: task.observation,
+      totalHours: task.total_hours.to_s
+    }
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { error: e.message }, status: :unprocessable_entity
   end
 end
+

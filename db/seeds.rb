@@ -8,7 +8,7 @@
 #   movies = Movie.create([{ name: "Star Wars" }, { name: "Lord of the Rings" }])
 #   Character.create(name: "Luke", movie: movies.first)
 
-company = Company.create(name: 'NobeSistemas', value: 50)
+company = Company.create(name: 'NobeSistemas', value: 45)
 
 softwares = %w[
   Almoxarifado

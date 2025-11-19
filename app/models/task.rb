@@ -12,8 +12,8 @@ class Task < ApplicationRecord
   def as_json(_options = {})
     {
       id:,
-      companyName: company.name,
-      softwareName: software.name,
+      companyName: company&.name,
+      softwareName: software&.name,
       code:,
       name:,
       dateOpened: date_opened,

@@ -3,6 +3,7 @@
 require 'simplecov'
 require 'notifier'
 require 'colorize'
+require 'fileutils'
 
 RUN_SPECS = ARGV.include?('spec')
 PERCENT_LINES = 100
@@ -53,12 +54,24 @@ SimpleCov.at_exit do
 
     if cover_down
       SimpleCov.result.format!
+      begin
+        FileUtils.chmod_R(0o755, SimpleCov.coverage_path)
+      rescue StandardError
+        # ignore permission errors
+      end
 
       if covered_percent < PERCENT_LINES || branch_covered_percent < PERCENT_BRANCHES
         puts 'COVERAGE TESTE DOWN'.colorize(:red)
         exit(1)
       end
     else
+      # Sempre gerar o relatório HTML mesmo quando a cobertura está OK
+      SimpleCov.result.format!
+      begin
+        FileUtils.chmod_R(0o755, SimpleCov.coverage_path)
+      rescue StandardError
+        # ignore permission errors
+      end
       puts 'COVERAGE TOTAL OK'.colorize(:green)
     end
   end

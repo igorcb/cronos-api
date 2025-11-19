@@ -3,4 +3,4 @@
   - mailers
   - critical
   - low
-:concurrency: 5
+:concurrency: 1

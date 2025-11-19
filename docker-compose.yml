@@ -1,50 +1,71 @@
-version: "3"
-
 services:
   db:
     container_name: cronos-api_db
-    image: postgres
+    image: postgres:15
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     volumes:
-      - ./data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     ports:
-      - 5432:5432
-
-  # sidekiq:
-  #   build: .
-  #   command: bundle exec sidekiq -C config/sidekiq.yml # Correção no comando
-  #   depends_on:
-  #     - redis
-  #     - web
-  #   environment:
-  #     - REDIS_URL=redis://redis:6379/0
-  #   volumes:
-  #     - .:/app
-
-  web:
-    container_name: cronos-api_web
-    build: .
-    command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails s -p 4001 -b '0.0.0.0'"
-    volumes:
-      - .:/app
-    environment:
-      - BUNDLE_PATH=/app/vendor/bundle
-    ports:
-      - "4001:4001"
-    depends_on:
-      - db
-      - redis
-    stdin_open: true
-    tty: true
+      - "5434:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     container_name: cronos-api_redis
     image: redis:7.0.7
-    command: ["redis-server", "--appendonly", "yes"]
+    command: [ "redis-server", "--appendonly", "yes" ]
     volumes:
       - redis-data:/data
+    ports:
+      - "6380:6379"
+
+  web:
+    container_name: cronos-api_web
+    build: .
+    command: bash -c "rm -f tmp/pids/server.pid && bundle check || bundle install && bundle exec rails s -p 4001 -b '0.0.0.0'"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      - BUNDLE_PATH=/app/vendor/bundle
+      - RAILS_MASTER_KEY=555a0dd81a9edb883545ccf6d7e168b7
+      - REDIS_URL=redis://redis:6379/1
+    ports:
+      - "4001:4001"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    stdin_open: true
+    tty: true
+
+  worker:
+    container_name: cronos-api_worker
+    build: .
+    command: bash -c "bundle check || bundle install && bundle exec sidekiq -e development -C config/sidekiq.yml -r ./config/environment.rb"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      - BUNDLE_PATH=/app/vendor/bundle
+      - RAILS_MASTER_KEY=555a0dd81a9edb883545ccf6d7e168b7
+      - REDIS_URL=redis://redis:6379/1
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    stdin_open: true
+    tty: true
 
 volumes:
+  postgres_data:
   redis-data:

@@ -22,6 +22,8 @@ class WelcomeController < ApplicationController
   end
 
   def dashboard
+    # Evita cache para garantir dados frescos no retorno ao Dashboard
+    response.headers['Cache-Control'] = 'no-store'
     render json: {
              totalCards: Task.total_count_tasks,
              totalHoursCards: Task.total_hours_tasks,

@@ -1,7 +1,44 @@
 class UploadsController < ApplicationController
-  skip_before_action :verify_authenticity_token
+  # CSRF já desativado globalmente; garantir robustez caso callback não exista
+  skip_before_action :verify_authenticity_token, raise: false
   def new
     render json: { message: 'new' }, status: :ok
+  end
+
+  def index
+    response.headers['Cache-Control'] = 'no-store'
+    uploads = Upload.order(created_at: :desc)
+    render json: uploads.map { |u|
+      {
+        id: u.id,
+        fileName: u.file_name,
+        status: u.status,
+        totalLines: u.total_lines,
+        successCount: u.success_count,
+        errorCount: u.error_count,
+        errorMessages: u.error_messages,
+        processedCount: (u.success_count.to_i + u.error_count.to_i),
+        createdAt: u.created_at,
+        updatedAt: u.updated_at,
+      }
+    }
+  end
+
+  def show
+    response.headers['Cache-Control'] = 'no-store'
+    u = Upload.find(params[:id])
+    render json: {
+      id: u.id,
+      fileName: u.file_name,
+      status: u.status,
+      totalLines: u.total_lines,
+      successCount: u.success_count,
+      errorCount: u.error_count,
+      errorMessages: u.error_messages,
+      processedCount: (u.success_count.to_i + u.error_count.to_i),
+      createdAt: u.created_at,
+      updatedAt: u.updated_at,
+    }, status: :ok
   end
 
   def create
@@ -21,8 +58,14 @@ class UploadsController < ApplicationController
     )
 
     if upload.save
-      # Inicia o processamento em segundo plano usando Sidekiq
-      UploadServiceJob.perform_later(temp_file_path.to_s, upload.id)
+      # Decide processamento síncrono ou assíncrono conforme variável de ambiente
+      if ENV['UPLOAD_SYNC'] == '1'
+        UploadService.new(temp_file_path.to_s, upload.id).call
+      else
+        UploadServiceJob.perform_later(temp_file_path.to_s, upload.id)
+      end
+      # Retorna apenas a mensagem (compatibilidade com testes) e cabeçalho com ID
+      response.set_header('X-Upload-Id', upload.id)
       render json: { message: 'File processing started successfully.' }
     else
       render json: { error: 'Failed to save upload record.' }, status: :unprocessable_entity

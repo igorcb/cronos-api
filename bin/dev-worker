@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Helper para iniciar o Sidekiq com TTY interativo no ambiente de desenvolvimento.
+# Use dentro do contêiner web ou via docker-compose exec.
+
+echo "[dev-worker] Iniciando Sidekiq em desenvolvimento com config/sidekiq.yml"
+bundle exec sidekiq -e development -C config/sidekiq.yml -r ./config/environment.rb

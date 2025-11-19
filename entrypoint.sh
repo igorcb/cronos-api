@@ -1,9 +1,13 @@
 #!/bin/bash
 set -e
 
-bundle exec rails db:migrate
+# Remove o server.pid se existir
+if [ -f tmp/pids/server.pid ]; then
+  rm -f tmp/pids/server.pid
+fi
 
-# bundle exec sidekiq -C config/sidekiq.yml
+# Instala as gems se necessário
+bundle check || bundle install
 
-# Inicia o servidor Rails
-exec bundle exec rails server -b 0.0.0.0 -p 4001
+# Executa o comando principal
+exec "$@"
