@@ -38,6 +38,7 @@ jobs:
       PGHOST: localhost
       PGUSER: postgres
       PGPASSWORD: postgres
+      RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -97,6 +98,11 @@ jobs:
         with:
           ruby-version: '3.1.3'
           bundler-cache: true
+      - name: Set Rails master key
+        env:
+          RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
+        run: |
+          [ -z "$RAILS_MASTER_KEY" ] && echo "RAILS_MASTER_KEY não definido" && exit 1 || echo "Rails master key definido (não exibido)"
       - name: Install system dependencies for PostgreSQL client
         run: |
           sudo apt-get update
@@ -127,6 +133,7 @@ jobs:
           RAILSWAY_API_KEY: ${{ secrets.RAILSWAY_API_KEY }}
           RAILSWAY_APP_ID: ${{ secrets.RAILSWAY_APP_ID }}
           RAILSWAY_DEPLOY_CMD: ${{ secrets.RAILSWAY_DEPLOY_CMD }}
+          RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
         run: |
           if [ -z "$RAILSWAY_DEPLOY_CMD" ]; then
             echo "RAILSWAY_DEPLOY_CMD não definido em Secrets. Configure o comando de deploy."
