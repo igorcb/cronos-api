@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:11-alpine
+        image: postgres:14-alpine
         ports:
           - "5432:5432"
         env:
@@ -28,12 +28,23 @@ jobs:
         options: --entrypoint redis-server         
     env:
       RAILS_ENV: test
-      DATABASE_URL: "postgres://rails:password@localhost:5432/rails_test"
-      REDIS_URL: redis://localhost:6379/0
+      DATABASE_URL: "postgres://rails:password@postgres:5432/rails_test"
+      REDIS_URL: "redis://redis:6379/0"
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
       # Add or replace dependency steps here
+      - name: Install system dependencies (libpq and Postgres client)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libpq-dev postgresql-client
+      - name: Wait for Postgres
+        run: |
+          for i in {1..30}; do
+            pg_isready -h postgres -p 5432 -U rails && break
+            echo "Postgres not ready yet..."
+            sleep 2
+          done
       - name: Install Ruby and gems
         uses: ruby/setup-ruby@55283cc23133118229fd3f97f9336ee23a179fcf # v1.146.0
         with:
@@ -57,6 +68,10 @@ jobs:
         uses: ruby/setup-ruby@55283cc23133118229fd3f97f9336ee23a179fcf # v1.146.0
         with:
           bundler-cache: true
+      - name: Install system dependencies for PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libpq-dev
       # Add or replace any other lints here
       - name: Security audit dependencies
         run: bundle exec bundle audit --update
