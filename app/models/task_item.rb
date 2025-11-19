@@ -6,7 +6,7 @@ class TaskItem < ApplicationRecord
   validates :hour_start, presence: true
   validates :status, presence: true
 
-  enum status: { pending: 0, finalized: 1 }
+  enum :status, { pending: 0, finalized: 1 }
 
   after_save :task_update_status
 

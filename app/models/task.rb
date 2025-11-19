@@ -7,7 +7,7 @@ class Task < ApplicationRecord
   validates :name, :date_opened, :status, presence: true
   validates :code, presence: true, uniqueness: { scope: %i[company_id software_id] }
 
-  enum status: { opened: 0, finalized: 1, reopened: 2, delivered: 3 }
+  enum :status, { opened: 0, finalized: 1, reopened: 2, delivered: 3 }
 
   def as_json(_options = {})
     {

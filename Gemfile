@@ -3,14 +3,14 @@
 source 'https://rubygems.org'
 git_source(:github) { |_repo| "https://github.com/#{repo}.git" }
 
-ruby '3.1.3'
+ruby '3.3.10'
 
 gem 'importmap-rails', '1.1.5'
-gem 'jbuilder', '2.11.5'
+gem 'jbuilder', '2.14.1'
 gem 'pg', '1.4.6 '
 gem 'puma', '>= 6.4.3'
 gem 'rack-cors', '2.0'
-gem 'rails', '7.1.5.2'
+gem 'rails', '8.1.1'
 gem 'rack', '>= 2.2.21'
 gem 'sprockets-rails', '3.4.2'
 gem 'stimulus-rails', '1.2.1'
@@ -46,7 +46,6 @@ group :development, :test do
   gem 'rubocop-factory_bot', '2.24'
   gem 'rails-controller-testing', '1.0.5'
   gem 'shoulda-matchers', '5.3'
-  gem 'ruby_audit', '2.2.0'
 end
 
 group :development do

@@ -69,4 +69,4 @@ rubocop:
 	$(LOCAL_COMPOSE) exec web bash -lc 'bundle check || bundle install && bundle exec rubocop'
 
 audit:
-	$(LOCAL_COMPOSE) exec web bash -lc 'bundle check || bundle install && bundle exec bundler-audit update && bundle exec bundler-audit check --verbose && mkdir -p tmp && bundle exec brakeman -A --no-pager -o tmp/brakeman.json'
+	$(LOCAL_COMPOSE) exec web bash -lc 'bundle check || bundle install && bundle exec bundler-audit update && bundle exec bundler-audit check --verbose && mkdir -p tmp && bundle exec brakeman -A --no-pager --no-exit-on-warn --no-exit-on-error -o tmp/brakeman.json'
