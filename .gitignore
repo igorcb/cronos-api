@@ -34,3 +34,19 @@ config/database.yml
 
 /config/master.key
 .env
+/.env*
+*.local
+*.bak
+.DS_Store
+Thumbs.db
+node_modules/
+*.log
+*.tmp
+/tmp/*
+/coverage/
+/data/
+/.vscode/
+/.idea/
+/.tool-versions
+/.rspec-local
+**/*.sqlite3
