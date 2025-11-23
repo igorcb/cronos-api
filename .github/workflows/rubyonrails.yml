@@ -160,11 +160,12 @@ jobs:
           RAILSWAY_DEPLOY_CMD: ${{ secrets.RAILSWAY_DEPLOY_CMD }}
           RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
         run: |
-          if [ -z "$RAILSWAY_DEPLOY_CMD" ]; then
-            echo "RAILSWAY_DEPLOY_CMD não definido em Secrets. Configure o comando de deploy."
-            exit 1
-          fi
           echo "Iniciando deploy para Railsway..."
           export RAILWAY_TOKEN="$RAILSWAY_API_KEY"
           railway status || true
-          bash -lc "$RAILSWAY_DEPLOY_CMD"
+          if [ -z "$RAILSWAY_DEPLOY_CMD" ]; then
+            echo "Secret RAILSWAY_DEPLOY_CMD ausente. Usando fallback: 'railway up'"
+            bash -lc "railway up"
+          else
+            bash -lc "$RAILSWAY_DEPLOY_CMD"
+          fi
