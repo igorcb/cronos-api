@@ -13,6 +13,7 @@ class CalculateHours
       hours_end, end_minute = k_hours_end.split(':').map(&:to_i)
 
       difference_minutes = (hours_end * 60 + end_minute) - (hours_start * 60 + start_minute)
+      next if difference_minutes <= 0
 
       @total_minutes += difference_minutes
     end

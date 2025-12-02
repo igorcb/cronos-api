@@ -2,48 +2,21 @@ require 'rails_helper'
 
 RSpec.describe CalculateTotalHours do
   describe '#execute' do
-    subject(:calculate) {
-      described_class.new
-    }
-
-    let(:hours_empty) {
-      []
-    }
-
-    let(:hours_valid) {
-      ['09:02', '13:35', '03:31']
-    }
-
-    let(:sixty_minute) {
-      ['09:60']
-    }
-
-    let(:less_than_sixty_minute) {
-      ['09:50']
-    }
-
-    let(:great_than_sixty_minute) {
-      ['09:61']
-    }
-
-    it 'when you have not informed times ' do
-      expect(calculate.execute(hours_empty)).to eq('00:00')
+    it 'retorna 00:00 quando vazio' do
+      expect(described_class.new.execute([])).to eq('00:00')
     end
 
-    it 'when you have informed times valid' do
-      expect(calculate.execute(hours_valid)).to eq('26:08')
+    it 'soma horas e minutos sem carry' do
+      expect(described_class.new.execute(%w[01:10 02:20])).to eq('03:30')
     end
 
-    it 'when you have informed less than sixty minute' do
-      expect(calculate.execute(less_than_sixty_minute)).to eq('09:50')
+    it 'faz carry quando minutos >= 60' do
+      expect(described_class.new.execute(%w[00:50 00:15 00:10])).to eq('01:15')
     end
 
-    it 'when you have informed sixty minute' do
-      expect(calculate.execute(sixty_minute)).to eq('10:00')
-    end
-
-    it 'when you have informed great than sixty minute' do
-      expect(calculate.execute(great_than_sixty_minute)).to eq('10:01')
+    it 'acumula vários tempos' do
+      expect(described_class.new.execute(%w[00:30 00:30 01:00 02:15])).to eq('04:15')
     end
   end
 end
+

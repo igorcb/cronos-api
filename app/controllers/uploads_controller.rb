@@ -43,29 +43,59 @@ class UploadsController < ApplicationController
   end
 
   def create
-    file = params[:file]
-    dir = Rails.root.join('tmp', 'uploads')
-    FileUtils.mkdir_p(dir)
-    temp_file_path = dir.join("#{SecureRandom.uuid}.xlsx")
-    File.open(temp_file_path, 'wb') { |f| f.write(file.read) }
+    if params[:file].present?
+      file = params[:file]
+      dir = Rails.root.join('tmp', 'uploads')
+      FileUtils.mkdir_p(dir)
+      temp_file_path = dir.join("#{SecureRandom.uuid}.xlsx")
+      File.open(temp_file_path, 'wb') { |f| f.write(file.read) }
+
+      upload = Upload.new(
+        file_name: file.original_filename,
+        total_lines: 0,
+        status: :processing,
+        success_count: 0,
+        error_count: 0,
+        error_messages: '',
+      )
+
+      if upload.save
+        if ENV['UPLOAD_SYNC'] == '1' || params[:sync].to_s == '1'
+          UploadService.new(temp_file_path.to_s, upload.id).call
+        else
+          UploadServiceJob.perform_later(temp_file_path.to_s, upload.id)
+        end
+        response.set_header('X-Upload-Id', upload.id)
+        render json: { message: 'File processing started successfully.' }
+      else
+        render json: { error: 'Failed to save upload record.' }, status: :unprocessable_entity
+      end
+      return
+    end
+
+    rows = params[:rows] || params[:data] || params[:items] || params[:_json]
+    unless rows.is_a?(Array)
+      render json: { error: 'Invalid JSON payload. Expected array in rows.' }, status: :unprocessable_entity
+      return
+    end
+
+    normalized_rows = rows.map { |r| r.respond_to?(:to_unsafe_h) ? r.to_unsafe_h : r }
 
     upload = Upload.new(
-      file_name: file.original_filename,
-      total_lines: 0, # Substitua pela lógica real para calcular as linhas
-      status: :processing, # Ou outro status desejado
+      file_name: 'payload.json',
+      total_lines: 0,
+      status: :processing,
       success_count: 0,
       error_count: 0,
       error_messages: '',
     )
 
     if upload.save
-      # Decide processamento síncrono ou assíncrono conforme variável de ambiente
-      if ENV['UPLOAD_SYNC'] == '1'
-        UploadService.new(temp_file_path.to_s, upload.id).call
+      if ENV['UPLOAD_SYNC'] == '1' || params[:sync].to_s == '1'
+        UploadJsonService.new(normalized_rows, upload.id).call
       else
-        UploadServiceJob.perform_later(temp_file_path.to_s, upload.id)
+        UploadJsonServiceJob.perform_later(normalized_rows, upload.id)
       end
-      # Retorna apenas a mensagem (compatibilidade com testes) e cabeçalho com ID
       response.set_header('X-Upload-Id', upload.id)
       render json: { message: 'File processing started successfully.' }
     else

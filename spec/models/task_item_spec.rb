@@ -143,4 +143,8 @@ RSpec.describe TaskItem, type: :model do
     hour = task_item.time_parse(task_item.hour_end)
     expect(hour).to eq('16:30')
   end
+
+  it 'time parse returns empty when time is nil' do
+    expect(task_item.time_parse(nil)).to eq('')
+  end
 end

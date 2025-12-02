@@ -2,47 +2,25 @@ require 'rails_helper'
 
 RSpec.describe CalculateHours do
   describe '#execute' do
-    subject(:calculate) {
-      described_class.new
-    }
-
-    let(:hours_empty) { [] }
-
-    let(:hours_invalid) {
-      [
-        ['07:02', nil],
-      ]
-    }
-
-    let(:one_hour_valid) {
-      [
-        ['07:02', '09:19'],
-      ]
-    }
-
-    let(:more_hour_valid) {
-      [
-        ['07:02', '09:19'],
-        ['11:02', '12:40'],
-        ['13:57', '15:19'],
-        ['07:00', '08:33'],
-      ]
-    }
-
-    it 'when you have not informed the start and end times' do
-      expect(calculate.execute(hours_empty)).to eq('00:00')
+    it 'returns 00:00 when hours empty' do
+      expect(described_class.new.execute([])).to eq('00:00')
     end
 
-    it 'when you did not inform the end time' do
-      expect(calculate.execute(hours_invalid)).to eq('00:00')
+    it 'sums a single valid pair' do
+      expect(described_class.new.execute([['08:00', '09:30']])).to eq('01:30')
     end
 
-    it 'when you have informed the start and end times' do
-      expect(calculate.execute(one_hour_valid)).to eq('02:17')
+    it 'ignores pairs with missing start or end' do
+      expect(described_class.new.execute([[nil, '09:00'], ['08:00', nil]])).to eq('00:00')
     end
 
-    it 'when you have informed the varios start and end times' do
-      expect(calculate.execute(more_hour_valid)).to eq('06:50')
+    it 'ignores non-positive intervals' do
+      expect(described_class.new.execute([['10:00', '09:00'], ['08:00', '08:00']])).to eq('00:00')
+    end
+
+    it 'accumulates multiple pairs and converts minutes to hours' do
+      expect(described_class.new.execute([['08:00', '08:30'], ['09:15', '10:45']])).to eq('02:00')
     end
   end
 end
+

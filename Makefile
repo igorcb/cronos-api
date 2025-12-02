@@ -13,7 +13,7 @@ LOCAL_COMPOSE ?= $(shell \
 	|| echo docker-compose \
 )
 
-.PHONY: server console worker coverage test rspec bash debug-server debug-worker reset rubocop audit
+.PHONY: server console worker coverage test rspec bash debug-server debug-worker reset rubocop audit migrate-db
 bash:
 	$(LOCAL_COMPOSE) exec web bash
 
@@ -28,7 +28,11 @@ stop-force:
 
 # Reset completo: derruba e remove volumes (perde dados)
 reset:
+	@echo "ATENÇÃO: este comando remove volumes. Cancele se não quiser perder dados."
 	$(LOCAL_COMPOSE) down -v --remove-orphans
+
+migrate-db:
+	$(LOCAL_COMPOSE) exec web bash -lc 'bundle exec rails db:migrate'
 
 server:
 	$(LOCAL_COMPOSE) up -d web

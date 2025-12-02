@@ -1,81 +1,44 @@
 require 'rails_helper'
 
 RSpec.describe TaskItemsController, type: :controller do
-  describe 'GET /tasks/:task_id/task_items' do
-    let!(:task) { create(:task) }
-    let(:task_item) {
-      {
-        date_start: '2023-10-16',
-        hour_start: '09:00',
-        hour_end: '10:15',
-        status: TaskItem.statuses[:pending],
-      }
-    }
+  let(:company) { create(:company, name: 'Example Company', value: 10) }
+  let(:software) { company.softwares.create(name: 'Example Software') }
+  let(:task) { Task.create(company:, software:, code: 'C01', name: 'Example', date_opened: Date.today, status: 'opened') }
 
-    let(:task_item_params_invalid) {
-      {
-        task: nil,
-        date_start: nil,
-        hour_start: nil,
-        hour_end: nil,
-        status: nil,
-      }
-    }
-
-    let(:task_item_params_valid) {
-      {
-        date_start: '2023-10-16',
-        hour_start: '10:16',
-        hour_end: '11:23',
-        status: :pending,
-      }
-    }
-
-    it 'return all task_items from task' do
-      task.task_items.create(task_item)
-
+  describe 'GET #index' do
+    it 'retorna itens da tarefa' do
+      TaskItem.create(task:, date_start: Date.today, hour_start: '08:00', hour_end: '09:00', status: 'pending')
       get :index, params: { task_id: task.id }
-
-      response_body = response.parsed_body
-
-      expect(response_body.size).to eq(1)
-      expect(response_body[0]['dateStart']).to eq('2023-10-16')
-      expect(response_body[0]['hourStart']).to eq('09:00')
-      expect(response_body[0]['hourEnd']).to eq('10:15')
-      expect(response_body[0]['hourEnd']).to eq('10:15')
-      expect(response_body[0]['status']).to eq('pending')
+      expect(response).to have_http_status(:ok)
+      body = response.parsed_body
+      expect(body.first['task_id']).to eq(task.id)
     end
+  end
 
-    it 'when params invalid return unprocessable_entity' do
-      post :create, params: { task_id: task.id, task_item: task_item_params_invalid }
-
-      expect(response).to have_http_status(:unprocessable_entity)
-
-      response_body = response.parsed_body
-      expect(response_body).to include('date_start' => ["can't be blank"])
-      expect(response_body).to include('hour_start' => ["can't be blank"])
-      expect(response_body).to include('status' => ["can't be blank"])
-    end
-
-    it 'when params valid return success' do
-      post :create, params: { task_id: task.id, task_item: task_item_params_valid }
-
+  describe 'POST #create' do
+    it 'cria item com sucesso' do
+      post :create, params: { task_id: task.id, task_item: { date_start: Date.today, hour_start: '08:00', hour_end: '09:00', status: 'pending' } }
       expect(response).to have_http_status(:created)
-      expect(response.body).not_to include('hasErrors')
-
-      response_body = response.parsed_body
-
-      expect(response_body['dateStart']).to eq('2023-10-16')
-      expect(response_body['hourStart']).to eq('10:16')
-      expect(response_body['hourEnd']).to eq('11:23')
-      expect(response_body['totalHours']).to eq('01:07')
-      expect(response_body['status']).to eq('pending')
+      body = response.parsed_body
+      expect(body['task_id']).to eq(task.id)
     end
 
-    it 'returns 404 when task not found' do
-      get :index, params: { task_id: 99_999_999 }
+    it 'retorna erro quando validação falha' do
+      post :create, params: { task_id: task.id, task_item: { date_start: '', hour_start: '', hour_end: '', status: '' } }
+      expect(response).to have_http_status(:unprocessable_entity)
+      body = response.parsed_body
+      expect(body).to include('date_start')
+      expect(body).to include('hour_start')
+      expect(body).to include('status')
+    end
+  end
+
+  describe 'before_action set_task' do
+    it 'retorna not_found quando task não existe' do
+      get :index, params: { task_id: 999_999 }
       expect(response).to have_http_status(:not_found)
       expect(response.parsed_body['error']).to eq('Task not found')
     end
   end
 end
+

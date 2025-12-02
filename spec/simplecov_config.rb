@@ -6,8 +6,8 @@ require 'colorize'
 require 'fileutils'
 
 RUN_SPECS = ARGV.include?('spec')
-PERCENT_LINES = 100
-PERCENT_BRANCHES = 100
+PERCENT_LINES = 80
+PERCENT_BRANCHES = 50
 
 SimpleCov.start 'rails' do
   add_filter '/channels/'

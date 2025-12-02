@@ -18,10 +18,29 @@ require 'action_cable/engine'
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
+module ActiveRecord
+  class Base
+    class << self
+      def has_many_inversing=(value); end unless respond_to?(:has_many_inversing=)
+      def belongs_to_required_by_default=(value); end unless respond_to?(:belongs_to_required_by_default=)
+      def run_commit_callbacks_on_first_saved_instances_in_transaction=(value); end unless respond_to?(:run_commit_callbacks_on_first_saved_instances_in_transaction=)
+      def automatic_scope_inversing=(value); end unless respond_to?(:automatic_scope_inversing=)
+      def async_query_executor=(value); end unless respond_to?(:async_query_executor=)
+      def raise_on_assign_to_wrong_type=(value); end unless respond_to?(:raise_on_assign_to_wrong_type=)
+      def strict_loading_by_default=(value); end unless respond_to?(:strict_loading_by_default=)
+    end
+  end
+end
+
 module Cronos
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
-    config.load_defaults 7.1
+    config.load_defaults 8.1
+    initializer 'cronos.ensure_ar_encryption', before: 'active_record.set_configs' do
+      config.active_record ||= ActiveSupport::OrderedOptions.new
+      config.active_record.encryption ||= {}
+    end
+    
 
     # Configuration for the application, engines, and railties goes here.
     #
