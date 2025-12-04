@@ -73,33 +73,6 @@ class UploadsController < ApplicationController
       return
     end
 
-    rows = params[:rows] || params[:data] || params[:items] || params[:_json]
-    unless rows.is_a?(Array)
-      render json: { error: 'Invalid JSON payload. Expected array in rows.' }, status: :unprocessable_entity
-      return
-    end
-
-    normalized_rows = rows.map { |r| r.respond_to?(:to_unsafe_h) ? r.to_unsafe_h : r }
-
-    upload = Upload.new(
-      file_name: 'payload.json',
-      total_lines: 0,
-      status: :processing,
-      success_count: 0,
-      error_count: 0,
-      error_messages: '',
-    )
-
-    if upload.save
-      if ENV['UPLOAD_SYNC'] == '1' || params[:sync].to_s == '1'
-        UploadJsonService.new(normalized_rows, upload.id).call
-      else
-        UploadJsonServiceJob.perform_later(normalized_rows, upload.id)
-      end
-      response.set_header('X-Upload-Id', upload.id)
-      render json: { message: 'File processing started successfully.' }
-    else
-      render json: { error: 'Failed to save upload record.' }, status: :unprocessable_entity
-    end
+    render json: { error: 'Excel file required.' }, status: :unprocessable_entity
   end
 end

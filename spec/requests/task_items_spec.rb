@@ -4,7 +4,7 @@ RSpec.describe 'TaskItems', type: :request do
   describe 'GET /tasks/:task_id/task_items' do
     it 'returns http success' do
       task = create(:task)
-      get "/tasks/#{task.id}/task_items"
+      get task_task_items_path(task.id)
       expect(response).to have_http_status(:success)
     end
   end
@@ -24,7 +24,7 @@ RSpec.describe 'TaskItems', type: :request do
     }
 
     it 'returns http success' do
-      post "/tasks/#{task.id}/task_items", params: { task_item: }
+      post task_task_items_path(task.id), params: { task_item: }
       expect(response).to have_http_status(:success)
     end
   end

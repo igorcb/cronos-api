@@ -87,23 +87,16 @@ class UploadService
   private
 
   def task_item_create
-    if @task && @task.persisted?
-      # continue
-    else
-      return false
-    end
+    return false unless @task && @task.persisted?
+    # continue
 
-    if @status.to_s.strip.empty?
-      return false
-    else
-      # continue
-    end
+    return false if @status.to_s.strip.empty?
 
-    if @hour_start.to_s.strip.empty?
-      return false
-    else
-      # continue
-    end
+    # continue
+
+    return false if @hour_start.to_s.strip.empty?
+
+    # continue
 
     begin
       exists = TaskItem.exists?(

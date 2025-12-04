@@ -33,7 +33,7 @@ RSpec.describe UploadService do
       expect(upload.error_messages).to eq('Error message')
     end
 
-    it 'logs error when starting upload update fails (rescue início)' do
+    it 'logs error when starting upload update fails (start rescue)' do
       create(:upload, id: upload_id, status: :processing)
       fake_upload = instance_double(Upload)
       allow(fake_upload).to receive(:update).and_return(true)
@@ -49,7 +49,7 @@ RSpec.describe UploadService do
       expect(Rails.logger).to have_received(:error).with("Falha ao iniciar upload ##{upload_id}: start failed")
     end
 
-    it 'handles row processing error and records increment_error (rescue por linha)' do
+    it 'handles row processing error and records increment_error (row rescue)' do
       upload = create(:upload, id: upload_id, status: :processing)
       company = create(:company, name: 'NobeSistemas', value: 10)
       software = create(:software, company:, name: 'Almoxarifado')
@@ -69,19 +69,19 @@ RSpec.describe UploadService do
       expect(Rails.logger).to have_received(:error).with(/Erro ao processar linha \(code=2267\): row failed/)
     end
 
-    it 'append_error_message com existente presente acumula e unifica' do
+    it 'append_error_message with existing present accumulates and unifies' do
       service = described_class.new('f.xlsx', 1)
       result = service.send(:append_error_message, "e1\ne2", 'e2')
       expect(result.split("\n")).to match_array(%w[e1 e2])
     end
 
-    it 'append_error_message com existente ausente inicia lista' do
+    it 'append_error_message initializes list when existing missing' do
       service = described_class.new('f.xlsx', 1)
       result = service.send(:append_error_message, nil, 'e1')
       expect(result).to eq('e1')
     end
 
-    it 'não incrementa sucesso quando processed_ok é falso' do
+    it 'does not increment success when processed_ok is false' do
       upload = create(:upload, id: upload_id, status: :processing)
       company = create(:company, name: 'NobeSistemas', value: 10)
       create(:software, company:, name: 'Almoxarifado')
@@ -97,7 +97,7 @@ RSpec.describe UploadService do
       expect(upload.total_lines.to_i).to eq(0)
     end
 
-    it 'não incrementa nada quando excel está vazio (linha 90 sem processamento)' do
+    it 'does not increment anything when excel is empty (no processing)' do
       upload = create(:upload, id: upload_id, status: :processing)
       company = create(:company, name: 'NobeSistemas', value: 10)
       create(:software, company:, name: 'Almoxarifado')
@@ -113,8 +113,8 @@ RSpec.describe UploadService do
       expect(upload.status).to eq('completed')
     end
 
-    it 'quando preferred é hora HH:MM usa find_code_name como fallback' do
-      upload = create(:upload, id: upload_id, status: :processing)
+    it 'when preferred is HH:MM uses find_code_name as fallback' do
+      create(:upload, id: upload_id, status: :processing)
       company = create(:company, name: 'NobeSistemas', value: 10)
       create(:software, company:, name: 'Almoxarifado')
 
@@ -138,16 +138,17 @@ RSpec.describe UploadService do
       expect(t.name).to eq('Fallback via find_code_name')
     end
 
-    it 'quando preferred tem hífen usa preferred e extrai code/name' do
-      upload = create(:upload, id: upload_id, status: :processing)
+    it 'when preferred has hyphen uses preferred and extracts code/name' do
+      create(:upload, id: upload_id, status: :processing)
       company = create(:company, name: 'NobeSistemas', value: 10)
       create(:software, company:, name: 'Almoxarifado')
 
-      cell_struct = Struct.new(:value, :formatted_value) do
-        def blank?
-          value.nil? || value.to_s.strip == ''
+      cell_struct =
+        Struct.new(:value, :formatted_value) do
+          def blank?
+            value.nil? || value.to_s.strip == ''
+          end
         end
-      end
       row = []
       row[0] = cell_struct.new('Sexta')
       row[1] = cell_struct.new('01/09/2023', '01/09/2023')
@@ -169,16 +170,17 @@ RSpec.describe UploadService do
       expect(t.name).to eq('Hífen Case')
     end
 
-    it 'quando preferred usa em dash extrai code/name' do
-      upload = create(:upload, id: upload_id, status: :processing)
+    it 'when preferred uses en dash extracts code/name' do
+      create(:upload, id: upload_id, status: :processing)
       company = create(:company, name: 'NobeSistemas', value: 10)
       create(:software, company:, name: 'Almoxarifado')
 
-      cell_struct = Struct.new(:value, :formatted_value) do
-        def blank?
-          value.nil? || value.to_s.strip == ''
+      cell_struct =
+        Struct.new(:value, :formatted_value) do
+          def blank?
+            value.nil? || value.to_s.strip == ''
+          end
         end
-      end
       row = []
       row[0] = cell_struct.new('Sexta')
       row[1] = cell_struct.new('01/09/2023', '01/09/2023')
@@ -186,7 +188,7 @@ RSpec.describe UploadService do
       row[3] = cell_struct.new('10:22', '10:22')
       row[7] = cell_struct.new('Almoxarifado')
       row[8] = cell_struct.new('Finalizado')
-      row[10] = cell_struct.new("8123 — Em dash case")
+      row[10] = cell_struct.new('8123 — Em dash case')
 
       mock_excel_instance = instance_double(Roo::Excelx)
       allow(mock_excel_instance).to receive(:each_row_streaming).with(offset: 1).and_yield(row)
@@ -200,16 +202,58 @@ RSpec.describe UploadService do
       expect(t.name).to eq('Em dash case')
     end
 
-    it 'quando preferred não contém code usa find_code_name' do
-      upload = create(:upload, id: upload_id, status: :processing)
+    it 'loga e valida parsing de data 25/11/2025 (Excel)' do
+      create(:upload, id: upload_id, status: :processing)
       company = create(:company, name: 'NobeSistemas', value: 10)
       create(:software, company:, name: 'Almoxarifado')
 
-      cell_struct = Struct.new(:value, :formatted_value) do
-        def blank?
-          value.nil? || value.to_s.strip == ''
+      allow(Rails.logger).to receive(:info)
+
+      cell_struct =
+        Struct.new(:value, :formatted_value) do
+          def blank?
+            value.nil? || value.to_s.strip == ''
+          end
         end
-      end
+
+      row = []
+      row[0] = cell_struct.new('Terça')
+      row[1] = cell_struct.new('25/11/2025', '25/11/2025')
+      row[2] = cell_struct.new('08:00', '08:00')
+      row[3] = cell_struct.new('09:00', '09:00')
+      row[7] = cell_struct.new('Almoxarifado')
+      row[8] = cell_struct.new('Finalizado')
+      row[10] = cell_struct.new('9999: Data Teste 25/11/2025')
+
+      mock_excel_instance = instance_double(Roo::Excelx)
+      allow(mock_excel_instance).to receive(:each_row_streaming).with(offset: 1).and_yield(row)
+      allow(Roo::Excelx).to receive(:new).with(file_path).and_return(mock_excel_instance)
+
+      service = described_class.new(file_path, upload_id)
+      service.call
+
+      t = Task.find_by(code: '9999')
+      expect(t).not_to be_nil
+      expect(t.date_opened).to eq(Date.new(2025, 11, 25))
+      item = t.task_items.first
+      expect(item.date_start).to eq(Date.new(2025, 11, 25))
+
+      Rails.logger.info("DEBUG parsed date_opened=#{t.date_opened} item.date_start=#{item.date_start}")
+      expect(Rails.logger).to have_received(:info).with(/parsed date_opened=2025-11-25/)
+      expect(Rails.logger).to have_received(:info).with(/item.date_start=2025-11-25/)
+    end
+
+    it 'when preferred does not contain code uses find_code_name' do
+      create(:upload, id: upload_id, status: :processing)
+      company = create(:company, name: 'NobeSistemas', value: 10)
+      create(:software, company:, name: 'Almoxarifado')
+
+      cell_struct =
+        Struct.new(:value, :formatted_value) do
+          def blank?
+            value.nil? || value.to_s.strip == ''
+          end
+        end
       row = []
       row[0] = cell_struct.new('Sexta')
       row[1] = cell_struct.new('01/09/2023', '01/09/2023')
@@ -232,16 +276,17 @@ RSpec.describe UploadService do
       expect(t.name).to eq('Via find_code_name')
     end
 
-    it 'quando preferred vazio usa find_code_name' do
-      upload = create(:upload, id: upload_id, status: :processing)
+    it 'when preferred is blank uses find_code_name' do
+      create(:upload, id: upload_id, status: :processing)
       company = create(:company, name: 'NobeSistemas', value: 10)
       create(:software, company:, name: 'Almoxarifado')
 
-      cell_struct = Struct.new(:value, :formatted_value) do
-        def blank?
-          value.nil? || value.to_s.strip == ''
+      cell_struct =
+        Struct.new(:value, :formatted_value) do
+          def blank?
+            value.nil? || value.to_s.strip == ''
+          end
         end
-      end
       row = []
       row[0] = cell_struct.new('Sexta')
       row[1] = cell_struct.new('01/09/2023', '01/09/2023')
@@ -279,7 +324,7 @@ RSpec.describe UploadService do
       expect(upload.status).to eq('completed')
     end
 
-    it 'ensure_company cria NobeSistemas com valor do primeiro company' do
+    it 'ensure_company creates NobeSistemas with first company value' do
       Company.where('name ilike ?', 'nobesistemas').destroy_all
       base = Company.create(name: 'Example Company', value: 77)
       service = described_class.new(file_path, upload_id)
@@ -289,7 +334,7 @@ RSpec.describe UploadService do
       expect(c.value).to eq(base.value)
     end
 
-    it 'ensure_company não cria duplicado quando já existe' do
+    it 'ensure_company does not duplicate when already exists' do
       Company.where('name ilike ?', 'nobesistemas').destroy_all
       Company.create(name: 'NobeSistemas', value: 10)
       service = described_class.new(file_path, upload_id)
@@ -297,8 +342,8 @@ RSpec.describe UploadService do
         .not_to change { Company.where('name ilike ?', 'nobesistemas').count }
     end
 
-    it 'atribui @company_id para NobeSistemas durante call' do
-      upload = create(:upload, id: upload_id, status: :processing)
+    it 'assigns @company_id to NobeSistemas during call' do
+      create(:upload, id: upload_id, status: :processing)
       Company.where('name ilike ?', 'nobesistemas').destroy_all
 
       allow(Roo::Excelx).to receive(:new).with(file_path).and_return(mock_excel)
@@ -339,7 +384,7 @@ RSpec.describe UploadService do
       expect(upload.total_lines).to eq(2) # Only 2 valid rows, 1 blank row skipped
     end
 
-    it 'preenche horas via find_hours quando horas em branco' do
+    it 'fills hours via find_hours when hours are blank' do
       create(:upload, id: upload_id, status: :processing)
       company = create(:company, name: 'NobeSistemas', value: 10)
       create(:software, company:, name: 'Almoxarifado')
@@ -355,16 +400,17 @@ RSpec.describe UploadService do
       expect(item.as_json[:hourEnd]).to eq('10:22')
     end
 
-    it 'mantém hour_start presente e preenche apenas hour_end via find_hours' do
+    it 'keeps hour_start and fills only hour_end via find_hours' do
       create(:upload, id: upload_id, status: :processing)
       company = create(:company, name: 'NobeSistemas', value: 10)
       create(:software, company:, name: 'Almoxarifado')
 
-      cell_struct = Struct.new(:value, :formatted_value) do
-        def blank?
-          value.nil? || value.to_s.strip == ''
+      cell_struct =
+        Struct.new(:value, :formatted_value) do
+          def blank?
+            value.nil? || value.to_s.strip == ''
+          end
         end
-      end
 
       row = []
       row[0] = cell_struct.new('Sexta')
@@ -389,16 +435,17 @@ RSpec.describe UploadService do
       expect(item.as_json[:hourEnd]).to eq('09:00')
     end
 
-    it 'usa fallback de data/status/software quando colunas principais estão vazias' do
-      upload = create(:upload, id: upload_id, status: :processing)
+    it 'uses fallback for date/status/software when main columns are blank' do
+      create(:upload, id: upload_id, status: :processing)
       company = create(:company, name: 'NobeSistemas', value: 10)
       software = create(:software, company:, name: 'Almoxarifado')
 
-      cell_struct = Struct.new(:value, :formatted_value) do
-        def blank?
-          value.nil? || value.to_s.strip == ''
+      cell_struct =
+        Struct.new(:value, :formatted_value) do
+          def blank?
+            value.nil? || value.to_s.strip == ''
+          end
         end
-      end
       row = []
       row[0] = cell_struct.new('Sexta')
       row[1] = cell_struct.new('', nil)
@@ -428,7 +475,7 @@ RSpec.describe UploadService do
       expect(item.status).to eq('finalized')
     end
 
-    it 'mapeia status para status_task correto em create_task_and_task_item' do
+    it 'maps status to correct status_task in create_task_and_task_item' do
       create(:upload, id: upload_id, status: :processing)
       company = create(:company, name: 'NobeSistemas', value: 10)
       software = create(:software, company:, name: 'Almoxarifado')
@@ -459,7 +506,7 @@ RSpec.describe UploadService do
       end
     end
 
-    it 'retorna false quando task não persiste em create_task_and_task_item' do
+    it 'returns false when task is not persisted in create_task_and_task_item' do
       create(:upload, id: upload_id, status: :processing)
       company = create(:company, name: 'NobeSistemas', value: 10)
       software = create(:software, company:, name: 'Almoxarifado')
@@ -476,7 +523,7 @@ RSpec.describe UploadService do
       expect(service.send(:create_task_and_task_item)).to be(false)
     end
 
-    it 'incrementa erro quando task_item_create retorna false' do
+    it 'increments error when task_item_create returns false' do
       upload = create(:upload, id: upload_id, status: :processing)
       company = create(:company, name: 'NobeSistemas', value: 10)
       software = create(:software, company:, name: 'Almoxarifado')
@@ -495,7 +542,7 @@ RSpec.describe UploadService do
       expect(upload.error_count.to_i).to be >= 1
     end
 
-    it 'fallback para code_name sem dígitos iniciais (ramo else)' do
+    it 'fallback for code_name without leading digits (else branch)' do
       upload = create(:upload, id: upload_id, status: :processing)
       company = create(:company, name: 'NobeSistemas', value: 10)
       create(:software, company:, name: 'Almoxarifado')
@@ -513,7 +560,7 @@ RSpec.describe UploadService do
       expect(task.name).to eq('Sem digitos')
     end
 
-    it 'ignora linha quando empresa/software/code ausente em create_task_and_task_item' do
+    it 'ignores row when company/software/code missing in create_task_and_task_item' do
       upload = create(:upload, id: upload_id, status: :processing)
       Company.where(name: 'NobeSistemas').destroy_all
       # Não cria software para forçar software_id nil
@@ -605,19 +652,19 @@ RSpec.describe UploadService do
         expect(Rails.logger).to have_received(:error).with('Erro ao verificar TaskItem existente: Database connection error')
       end
 
-      it 'cria item mesmo após erro em exists? e retorna true' do
+      it 'creates item even after exists? error and returns true' do
         upload_id = 1
         file_path = 'example.xlsx'
         service = described_class.new(file_path, upload_id)
 
         company = Company.create(name: 'NobeSistemas', value: 10)
         software = Software.create(company:, name: 'Almoxarifado')
-        task = Task.create(company:, software:, code: 'X01', name: 'T', date_opened: Date.today, status: 'opened')
+        task = Task.create(company:, software:, code: 'X01', name: 'T', date_opened: Time.zone.today, status: 'opened')
 
         service.instance_variable_set(:@task, task)
-        service.instance_variable_set(:@date_start, Date.today)
+        service.instance_variable_set(:@date_start, Time.zone.today)
         service.instance_variable_set(:@hour_start, '08:00')
-        service.instance_variable_set(:@date_end, Date.today)
+        service.instance_variable_set(:@date_end, Time.zone.today)
         service.instance_variable_set(:@hour_end, '09:00')
         service.instance_variable_set(:@status, 'pending')
 
@@ -626,7 +673,7 @@ RSpec.describe UploadService do
         expect(service.send(:task_item_create)).to eq(true)
       end
 
-      it 'retorna false quando @task não está persistida' do
+      it 'returns false when @task is not persisted' do
         upload_id = 1
         file_path = 'example.xlsx'
         service = described_class.new(file_path, upload_id)
@@ -639,7 +686,7 @@ RSpec.describe UploadService do
         expect(service.send(:task_item_create)).to be(false)
       end
 
-      it 'retorna false quando @task é nil' do
+      it 'returns false when @task is nil' do
         upload_id = 1
         file_path = 'example.xlsx'
         service = described_class.new(file_path, upload_id)
@@ -648,19 +695,19 @@ RSpec.describe UploadService do
         expect(service.send(:task_item_create)).to be(false)
       end
 
-      it 'cria item quando task persistida e retorna true' do
+      it 'creates item when task persisted and returns true' do
         upload_id = 1
         file_path = 'example.xlsx'
         service = described_class.new(file_path, upload_id)
 
         company = Company.create(name: 'NobeSistemas', value: 10)
         software = Software.create(company:, name: 'Almoxarifado')
-        task = Task.create(company:, software:, code: 'C01', name: 'T1', date_opened: Date.today, status: 'opened')
+        task = Task.create(company:, software:, code: 'C01', name: 'T1', date_opened: Time.zone.today, status: 'opened')
 
         service.instance_variable_set(:@task, task)
-        service.instance_variable_set(:@date_start, Date.today)
+        service.instance_variable_set(:@date_start, Time.zone.today)
         service.instance_variable_set(:@hour_start, '12:00')
-        service.instance_variable_set(:@date_end, Date.today)
+        service.instance_variable_set(:@date_end, Time.zone.today)
         service.instance_variable_set(:@hour_end, '13:00')
         service.instance_variable_set(:@status, 'pending')
 
@@ -668,16 +715,16 @@ RSpec.describe UploadService do
         expect(service.send(:task_item_create)).to eq(true)
       end
 
-      it 'retorna false quando criação falha (created.persisted? == false)' do
+      it 'returns false when creation fails (created.persisted? == false)' do
         service = described_class.new('example.xlsx', upload_id)
         company = Company.create(name: 'NobeSistemas', value: 10)
         software = Software.create(company:, name: 'Almoxarifado')
-        task = Task.create(company:, software:, code: 'Z01', name: 'T', date_opened: Date.today, status: 'opened')
+        task = Task.create(company:, software:, code: 'Z01', name: 'T', date_opened: Time.zone.today, status: 'opened')
 
         service.instance_variable_set(:@task, task)
-        service.instance_variable_set(:@date_start, Date.today)
+        service.instance_variable_set(:@date_start, Time.zone.today)
         service.instance_variable_set(:@hour_start, '08:00')
-        service.instance_variable_set(:@date_end, Date.today)
+        service.instance_variable_set(:@date_end, Time.zone.today)
         service.instance_variable_set(:@hour_end, '09:00')
         service.instance_variable_set(:@status, 'pending')
 
@@ -689,7 +736,7 @@ RSpec.describe UploadService do
         expect(service.send(:task_item_create)).to be(false)
       end
 
-      it 'retorna false quando @status vazio' do
+      it 'returns false when @status is blank' do
         upload_id = 1
         file_path = 'example.xlsx'
         service = described_class.new(file_path, upload_id)
@@ -705,7 +752,7 @@ RSpec.describe UploadService do
         expect(service.send(:task_item_create)).to be(false)
       end
 
-      it 'retorna false quando @hour_start vazio' do
+      it 'returns false when @hour_start is blank' do
         upload_id = 1
         file_path = 'example.xlsx'
         service = described_class.new(file_path, upload_id)
@@ -721,7 +768,7 @@ RSpec.describe UploadService do
         expect(service.send(:task_item_create)).to be(false)
       end
 
-      it 'retorna false' do
+      it 'returns false' do
         task = Task.new # não salva, então não está persistida
         upload_id = 1
         file_path = 'example.xlsx'
@@ -733,8 +780,8 @@ RSpec.describe UploadService do
         expect(service.send(:task_item_create)).to eq(false)
       end
 
-      it 'company_id fica nil quando NobeSistemas não é encontrado' do
-        upload = create(:upload, id: upload_id, status: :processing)
+      it 'company_id is nil when NobeSistemas is not found' do
+        create(:upload, id: upload_id, status: :processing)
         Company.where('name ilike ?', 'nobesistemas').destroy_all
         service = described_class.new(file_path, upload_id)
         allow(service).to receive(:ensure_company) # não cria empresa padrão
@@ -994,7 +1041,7 @@ RSpec.describe UploadService do
       expect(service.send(:parse_date, 'Nov 29, 2025')).to eq(Date.new(2025, 11, 29))
     end
 
-    it 'parse_date suporta DateTime' do
+    it 'parse_date supports DateTime' do
       service = described_class.new('f.xlsx', 1)
       dt = DateTime.new(2025, 11, 29, 12, 0, 0)
       expect(service.send(:parse_date, dt)).to eq(dt.to_date)
@@ -1041,7 +1088,22 @@ RSpec.describe UploadService do
       expect(service.send(:safe_cell, row, 0)).to eq('ok')
     end
 
-    it 'safe_cell sem value retorna to_s' do
+    it 'safe_cell rescues and uses to_s when value is missing' do
+      service = described_class.new('f.xlsx', 1)
+      obj = Class.new do
+        def formatted_value
+          raise 'boom'
+        end
+
+        def to_s
+          'stringed'
+        end
+      end.new
+      row = [obj]
+      expect(service.send(:safe_cell, row, 0)).to eq('stringed')
+    end
+
+    it 'safe_cell without value returns to_s' do
       service = described_class.new('f.xlsx', 1)
       obj = Class.new do
         def to_s
@@ -1082,31 +1144,31 @@ RSpec.describe UploadService do
       expect(calls).to eq(1)
     end
 
-    it 'find_date_cell retorna célula com data válida' do
+    it 'find_date_cell returns cell with valid date' do
       service = described_class.new('f.xlsx', 1)
       row = ['x', '01/11/2025', 'y']
       expect(service.send(:find_date_cell, row)).to eq('01/11/2025')
     end
 
-    it 'find_date_cell retorna vazio quando nenhum valor é data' do
+    it 'find_date_cell returns blank when no value is date' do
       service = described_class.new('f.xlsx', 1)
-      row = ['foo', 'bar', 'baz']
+      row = %w[foo bar baz]
       expect(service.send(:find_date_cell, row)).to eq('')
     end
 
-    it 'find_status_cell retorna célula que contém status reconhecível' do
+    it 'find_status_cell returns cell containing recognizable status' do
       service = described_class.new('f.xlsx', 1)
-      row = ['x', 'Pendência', 'y']
+      row = %w[x Pendência y]
       expect(service.send(:find_status_cell, row)).to eq('Pendência')
     end
 
-    it 'find_status_cell retorna vazio quando nenhum status encontrado' do
+    it 'find_status_cell returns blank when no status found' do
       service = described_class.new('f.xlsx', 1)
-      row = ['x', 'y']
+      row = %w[x y]
       expect(service.send(:find_status_cell, row)).to eq('')
     end
 
-    it 'find_code_name encontra último padrão com código: nome' do
+    it 'find_code_name finds last pattern with code: name' do
       service = described_class.new('f.xlsx', 1)
       row = ['foo', 'bar', '1234: Nome', '456- Outra']
       expect(service.send(:find_code_name, row)).to eq('456- Outra')
@@ -1118,38 +1180,38 @@ RSpec.describe UploadService do
       expect(service.send(:find_code_name, row)).to eq('9999: Teste')
     end
 
-    it 'find_software_cell retorna nome normalizado presente na linha' do
+    it 'find_software_cell returns normalized name present in row' do
       create(:software, name: 'Almoxarifado', company: create(:company, value: 10))
       service = described_class.new('f.xlsx', 1)
-      row = ['x', 'almoxarifado']
+      row = %w[x almoxarifado]
       expect(service.send(:find_software_cell, row)).to eq('almoxarifado')
     end
 
-    it 'find_software_cell retorna vazio quando não encontra' do
+    it 'find_software_cell returns blank when not found' do
       service = described_class.new('f.xlsx', 1)
-      row = ['x', 'y']
+      row = %w[x y]
       expect(service.send(:find_software_cell, row)).to eq('')
     end
 
-    it 'find_hours retorna início e fim válidos' do
+    it 'find_hours returns valid start and end' do
       service = described_class.new('f.xlsx', 1)
       row = ['a 08:00', 'b', 'c 10:00']
       expect(service.send(:find_hours, row)).to eq(['08:00', '10:00'])
     end
 
-    it 'find_hours retorna apenas início quando fim inválido' do
+    it 'find_hours returns only start when end invalid' do
       service = described_class.new('f.xlsx', 1)
       row = ['a 10:00', 'b 09:59']
       expect(service.send(:find_hours, row)).to eq(['10:00', nil])
     end
 
-    it 'find_hours retorna apenas início quando não encontra fim' do
+    it 'find_hours returns only start when end not found' do
       service = described_class.new('f.xlsx', 1)
       row = ['a 08:00', 'b']
       expect(service.send(:find_hours, row)).to eq(['08:00', nil])
     end
 
-    it 'find_hours entra no rescue quando Time.zone.parse levanta erro e retorna [s, nil]' do
+    it 'find_hours rescues when Time.zone.parse raises and returns [s, nil]' do
       service = described_class.new('f.xlsx', 1)
       row = ['a 08:00', 'b 09:00']
       # stub de Time.zone.parse para causar erro
@@ -1157,19 +1219,19 @@ RSpec.describe UploadService do
       expect(service.send(:find_hours, row)).to eq(['08:00', nil])
     end
 
-    it 'ensure_software com nome vazio não faz nada' do
+    it 'ensure_software with blank name does nothing' do
       service = described_class.new('f.xlsx', 1)
       expect(service.send(:ensure_software, '   ')).to be_nil
     end
 
-    it 'ensure_software sem empresa não cria software' do
+    it 'ensure_software without company does not create software' do
       Company.where(name: 'NobeSistemas').destroy_all
       service = described_class.new('f.xlsx', 1)
       service.send(:ensure_software, 'Almoxarifado')
       expect(Software.where(name: 'Almoxarifado').count).to eq(0)
     end
 
-    it 'ensure_software cria novo quando não existe e seta @software_id' do
+    it 'ensure_software creates new when not exists and sets @software_id' do
       Company.where(name: 'NobeSistemas').destroy_all
       company = create(:company, name: 'NobeSistemas', value: 10)
       expect(Software.where(company_id: company.id).count).to eq(0)
@@ -1183,7 +1245,7 @@ RSpec.describe UploadService do
       expect(service.instance_variable_get(:@software_id)).to eq(created.id)
     end
 
-    it 'ensure_software usa existente quando já cadastrado e não duplica' do
+    it 'ensure_software uses existing when already registered and does not duplicate' do
       Company.where(name: 'NobeSistemas').destroy_all
       company = create(:company, name: 'NobeSistemas', value: 10)
       existing = create(:software, company:, name: 'Almoxarifado')
@@ -1194,7 +1256,7 @@ RSpec.describe UploadService do
       expect(service.instance_variable_get(:@software_id)).to eq(existing.id)
     end
 
-    it 'ensure_company usa valor padrão quando não há empresas' do
+    it 'ensure_company uses default value when there are no companies' do
       Company.delete_all
       service = described_class.new('f.xlsx', 1)
       service.send(:ensure_company)
@@ -1211,7 +1273,7 @@ RSpec.describe UploadService do
       expect(service.send(:status_parse, 'Final')).to eq('finalized')
     end
 
-    it 'safe_cell retorna vazio para célula nil' do
+    it 'safe_cell returns blank for nil cell' do
       service = described_class.new('f.xlsx', 1)
       row = [nil]
       expect(service.send(:safe_cell, row, 0)).to eq('')
@@ -1223,13 +1285,13 @@ RSpec.describe UploadService do
       expect(service.send(:normalize_hour, nbsp)).to eq('08:29')
     end
 
-    it 'find_code_name retorna vazio quando não encontra padrão' do
+    it 'find_code_name returns blank when no pattern found' do
       service = described_class.new('f.xlsx', 1)
-      row = ['foo', 'bar']
+      row = %w[foo bar]
       expect(service.send(:find_code_name, row)).to eq('')
     end
 
-    it 'call captura erro externo e marca failed no upload' do
+    it 'call captures external error and marks upload as failed' do
       upload = create(:upload, id: 999, status: :processing)
       fp = 'spec/fixtures/files/tasks.xlsx'
       allow(Roo::Excelx).to receive(:new).with(fp).and_raise(StandardError, 'explode')
@@ -1240,7 +1302,7 @@ RSpec.describe UploadService do
       expect(upload.error_messages).to eq('explode')
     end
 
-    it 'create_task_and_task_item retorna false quando dados inválidos' do
+    it 'create_task_and_task_item returns false when data is invalid' do
       service = described_class.new('f.xlsx', 1)
       service.instance_variable_set(:@company_id, nil)
       service.instance_variable_set(:@software_id, nil)
@@ -1253,15 +1315,16 @@ RSpec.describe UploadService do
   describe 'branches extras' do
     let(:upload_id) { create(:upload, status: :processing).id }
 
-    it 'quando preferred tem dois pontos usa preferred e extrai code/name' do
+    it 'when preferred has colon uses preferred and extracts code/name' do
       company = create(:company, name: 'NobeSistemas', value: 10)
       create(:software, company:, name: 'Almoxarifado')
 
-      cell_struct = Struct.new(:value, :formatted_value) do
-        def blank?
-          value.nil? || value.to_s.strip == ''
+      cell_struct =
+        Struct.new(:value, :formatted_value) do
+          def blank?
+            value.nil? || value.to_s.strip == ''
+          end
         end
-      end
       row = []
       row[0] = cell_struct.new('Sexta')
       row[1] = cell_struct.new('01/09/2023', '01/09/2023')
@@ -1283,7 +1346,7 @@ RSpec.describe UploadService do
       expect(t.name).to eq('Via preferred colon')
     end
 
-    it 'status_parse cobre todas as variações conhecidas' do
+    it 'status_parse covers all known variations' do
       service = described_class.new('x.xlsx', upload_id)
       expect(service.send(:status_parse, 'Finalizado')).to eq('finalized')
       expect(service.send(:status_parse, 'Finalizada')).to eq('finalized')
@@ -1298,22 +1361,22 @@ RSpec.describe UploadService do
       expect(service.send(:status_parse, 'xpto')).to be_nil
     end
 
-    it 'parse_date suporta YYYY-MM-DD' do
+    it 'parse_date supports YYYY-MM-DD' do
       service = described_class.new('x.xlsx', upload_id)
       expect(service.send(:parse_date, '2025-11-29')).to eq(Date.new(2025, 11, 29))
     end
 
-    it 'normalize_hour retorna vazio quando não há match' do
+    it 'normalize_hour returns blank when no match' do
       service = described_class.new('x.xlsx', upload_id)
       expect(service.send(:normalize_hour, 'sem hora')).to eq('')
     end
 
-    it 'scan_hour retorna vazio quando não há match' do
+    it 'scan_hour returns blank when no match' do
       service = described_class.new('x.xlsx', upload_id)
       expect(service.send(:scan_hour, 'texto qualquer')).to eq('')
     end
 
-    it 'create_task_and_task_item mapeia status finalized' do
+    it 'create_task_and_task_item maps status finalized' do
       company = create(:company, name: 'NobeSistemas', value: 10)
       software = create(:software, company:, name: 'Almoxarifado')
       service = described_class.new('x.xlsx', upload_id)
@@ -1321,9 +1384,9 @@ RSpec.describe UploadService do
       service.instance_variable_set(:@software_id, software.id)
       service.instance_variable_set(:@code, 'M01')
       service.instance_variable_set(:@name, 'Map finalize')
-      service.instance_variable_set(:@date_opened, Date.today)
-      service.instance_variable_set(:@date_start, Date.today)
-      service.instance_variable_set(:@date_end, Date.today)
+      service.instance_variable_set(:@date_opened, Time.zone.today)
+      service.instance_variable_set(:@date_start, Time.zone.today)
+      service.instance_variable_set(:@date_end, Time.zone.today)
       service.instance_variable_set(:@hour_start, '08:00')
       service.instance_variable_set(:@hour_end, '09:00')
       service.instance_variable_set(:@status, 'finalized')
@@ -1331,7 +1394,7 @@ RSpec.describe UploadService do
       expect(Task.find_by(code: 'M01').status).to eq('finalized')
     end
 
-    it 'create_task_and_task_item mapeia status pending para opened (após item fica reopened)' do
+    it 'create_task_and_task_item maps status pending to opened (after item becomes reopened)' do
       company = create(:company, name: 'NobeSistemas', value: 10)
       software = create(:software, company:, name: 'Almoxarifado')
       service = described_class.new('x.xlsx', upload_id)
@@ -1339,9 +1402,9 @@ RSpec.describe UploadService do
       service.instance_variable_set(:@software_id, software.id)
       service.instance_variable_set(:@code, 'M02')
       service.instance_variable_set(:@name, 'Map pending')
-      service.instance_variable_set(:@date_opened, Date.today)
-      service.instance_variable_set(:@date_start, Date.today)
-      service.instance_variable_set(:@date_end, Date.today)
+      service.instance_variable_set(:@date_opened, Time.zone.today)
+      service.instance_variable_set(:@date_start, Time.zone.today)
+      service.instance_variable_set(:@date_end, Time.zone.today)
       service.instance_variable_set(:@hour_start, '08:00')
       service.instance_variable_set(:@hour_end, '09:00')
       service.instance_variable_set(:@status, 'pending')
@@ -1349,7 +1412,7 @@ RSpec.describe UploadService do
       expect(Task.find_by(code: 'M02').status).to eq('reopened')
     end
 
-    it 'create_task_and_task_item mapeia status reopened' do
+    it 'create_task_and_task_item maps status reopened' do
       company = create(:company, name: 'NobeSistemas', value: 10)
       software = create(:software, company:, name: 'Almoxarifado')
       service = described_class.new('x.xlsx', upload_id)
@@ -1357,9 +1420,9 @@ RSpec.describe UploadService do
       service.instance_variable_set(:@software_id, software.id)
       service.instance_variable_set(:@code, 'M03')
       service.instance_variable_set(:@name, 'Map reopened')
-      service.instance_variable_set(:@date_opened, Date.today)
-      service.instance_variable_set(:@date_start, Date.today)
-      service.instance_variable_set(:@date_end, Date.today)
+      service.instance_variable_set(:@date_opened, Time.zone.today)
+      service.instance_variable_set(:@date_start, Time.zone.today)
+      service.instance_variable_set(:@date_end, Time.zone.today)
       service.instance_variable_set(:@hour_start, '08:00')
       service.instance_variable_set(:@hour_end, '09:00')
       service.instance_variable_set(:@status, 'reopened')
@@ -1368,7 +1431,7 @@ RSpec.describe UploadService do
       expect(Task.find_by(code: 'M03').status).to eq('reopened')
     end
 
-    it 'create_task_and_task_item mapeia status delivered' do
+    it 'create_task_and_task_item maps status delivered' do
       company = create(:company, name: 'NobeSistemas', value: 10)
       software = create(:software, company:, name: 'Almoxarifado')
       service = described_class.new('x.xlsx', upload_id)
@@ -1376,9 +1439,9 @@ RSpec.describe UploadService do
       service.instance_variable_set(:@software_id, software.id)
       service.instance_variable_set(:@code, 'M04')
       service.instance_variable_set(:@name, 'Map delivered')
-      service.instance_variable_set(:@date_opened, Date.today)
-      service.instance_variable_set(:@date_start, Date.today)
-      service.instance_variable_set(:@date_end, Date.today)
+      service.instance_variable_set(:@date_opened, Time.zone.today)
+      service.instance_variable_set(:@date_start, Time.zone.today)
+      service.instance_variable_set(:@date_end, Time.zone.today)
       service.instance_variable_set(:@hour_start, '08:00')
       service.instance_variable_set(:@hour_end, '09:00')
       service.instance_variable_set(:@status, 'delivered')
@@ -1387,7 +1450,7 @@ RSpec.describe UploadService do
       expect(Task.find_by(code: 'M04').status).to eq('delivered')
     end
 
-    it 'create_task_and_task_item mapeia status desconhecido para opened' do
+    it 'create_task_and_task_item maps unknown status to opened' do
       company = create(:company, name: 'NobeSistemas', value: 10)
       software = create(:software, company:, name: 'Almoxarifado')
       service = described_class.new('x.xlsx', upload_id)
@@ -1395,9 +1458,9 @@ RSpec.describe UploadService do
       service.instance_variable_set(:@software_id, software.id)
       service.instance_variable_set(:@code, 'M05')
       service.instance_variable_set(:@name, 'Map unknown')
-      service.instance_variable_set(:@date_opened, Date.today)
-      service.instance_variable_set(:@date_start, Date.today)
-      service.instance_variable_set(:@date_end, Date.today)
+      service.instance_variable_set(:@date_opened, Time.zone.today)
+      service.instance_variable_set(:@date_start, Time.zone.today)
+      service.instance_variable_set(:@date_end, Time.zone.today)
       service.instance_variable_set(:@hour_start, '08:00')
       service.instance_variable_set(:@hour_end, '09:00')
       service.instance_variable_set(:@status, 'other')

@@ -168,14 +168,14 @@ RSpec.describe Task, type: :model do
   end
 
   context 'when mark as delivered' do
-    it 'when there is no task_items return an error' do
+    it 'returns error when there is no task_items' do
       msg = 'Cannot mark a task as delivered because it has no task_item'
       task.mark_as_delivery
 
       expect(task.errors.messages[:base]).to include(msg)
     end
 
-    it 'when the last item of the task is not finalized' do
+    it 'returns error when the last item of the task is not finalized' do
       task = described_class.create!(card)
 
       task.task_items.create(
@@ -191,7 +191,7 @@ RSpec.describe Task, type: :model do
       expect(task.errors[:base]).to include('The status of the last task is not finished')
     end
 
-    it 'mark task as delivered and date_delivered' do
+    it 'marks task as delivered and sets date_delivered' do
       task = described_class.create!(card)
 
       task.task_items.create(
@@ -212,7 +212,7 @@ RSpec.describe Task, type: :model do
   end
 
   describe '#as_json' do
-    it 'serializa com companyName e softwareName presentes' do
+    it 'serializes with companyName and softwareName present' do
       task = described_class.create!(card)
 
       json = task.as_json
@@ -228,7 +228,7 @@ RSpec.describe Task, type: :model do
       expect(json[:observation]).to be_nil
     end
 
-    it 'serializa com companyName e softwareName nulos quando associações faltam' do
+    it 'serializes companyName and softwareName as nil when associations missing' do
       task = described_class.create!(card)
       # Simula ausência de associações para cobrir os ramos &.
       allow(task).to receive_messages(company: nil, software: nil)
@@ -240,12 +240,12 @@ RSpec.describe Task, type: :model do
   end
 
   describe '#update_status (branches)' do
-    it 'sem itens retorna opened' do
+    it 'returns opened when there are no items' do
       task = described_class.create!(card)
       expect(task.update_status).to eq('opened')
     end
 
-    it 'com último item finalized atualiza para finalized' do
+    it 'updates to finalized when last item is finalized' do
       task = described_class.create!(card)
       task.task_items.create(
         date_start: '2023-10-04',
@@ -258,7 +258,7 @@ RSpec.describe Task, type: :model do
       expect(task.status).to eq('finalized')
     end
 
-    it 'com último item pendente atualiza para reopened' do
+    it 'updates to reopened when last item is pending' do
       task = described_class.create!(card)
       task.task_items.create(
         date_start: '2023-10-04',
@@ -273,13 +273,13 @@ RSpec.describe Task, type: :model do
   end
 
   describe '#mark_as_delivery (branches)' do
-    it 'retorna erro quando não possui itens' do
+    it 'returns error when it has no items' do
       task = described_class.create!(card)
       task.mark_as_delivery
       expect(task.errors[:base]).to include('Cannot mark a task as delivered because it has no task_item')
     end
 
-    it 'retorna erro quando último item não está finalizado' do
+    it 'returns error when last item is not finalized' do
       task = described_class.create!(card)
       task.task_items.create(
         date_start: '2023-10-04',
@@ -292,7 +292,7 @@ RSpec.describe Task, type: :model do
       expect(task.errors[:base]).to include('The status of the last task is not finished')
     end
 
-    it 'marca entregue quando último item finalizado' do
+    it 'marks delivered when last item is finalized' do
       task = described_class.create!(card)
       task.task_items.create(
         date_start: '2023-10-04',

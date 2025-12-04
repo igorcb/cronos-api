@@ -83,6 +83,23 @@ class Task < ApplicationRecord
     (hours.to_f * value) + total_minutes.round(2)
   end
 
+  def self.total_count_tasks_delivered
+    where(status: :delivered).count
+  end
+
+  def self.total_hours_tasks_delivered
+    hours = where(status: :delivered).pluck(:total_hours)
+    CalculateTotalHours.new.execute(hours)
+  end
+
+  def self.total_value_tasks_delivered
+    value = Company.first.value.to_f
+
+    hours, minutes = total_hours_tasks_delivered.split(':')
+    total_minutes = (value / 60) * minutes.to_f
+    (hours.to_f * value) + total_minutes.round(2)
+  end
+
   def software
     Software.where(id: software_id).first
   end

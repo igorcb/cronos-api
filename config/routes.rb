@@ -15,7 +15,7 @@ Rails.application.routes.draw do
     end
   end
 
-  get '/companies/:company_id/softwares', to: 'welcome#softwares_by_company_id'
+  get '/companies/:company_id/softwares', to: 'welcome#softwares_by_company_id', as: :company_softwares
   get '/softwares', to: 'welcome#softwares'
   get '/companies', to: 'welcome#companies'
   get '/dashboard', to: 'welcome#dashboard'

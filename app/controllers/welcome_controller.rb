@@ -34,6 +34,9 @@ class WelcomeController < ApplicationController
              totalCardsOpenedOrReopened: Task.total_count_tasks_opened_or_reopened,
              totalHoursCardsOpenedOrReopened: Task.total_hours_tasks_opened_or_reopened,
              totalValueCardsOpenedOrReopened: Task.total_value_tasks_opened_or_reopened,
+             totalCardsDelivered: Task.total_count_tasks_delivered,
+             totalHoursCardsDelivered: Task.total_hours_tasks_delivered,
+             totalValueCardsDelivered: Task.total_value_tasks_delivered,
            },
            status: :ok
   end

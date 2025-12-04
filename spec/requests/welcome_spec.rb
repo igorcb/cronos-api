@@ -5,13 +5,13 @@ require 'rails_helper'
 RSpec.describe 'Welcome', type: :request do
   describe 'GET /' do
     it 'returns http success' do
-      get '/'
+      get root_path
 
       expect(response).to have_http_status(:success)
     end
 
     it 'returns message "Server is running"' do
-      get '/'
+      get root_path
 
       response_body = response.parsed_body
       expect(response_body['message']).to eq 'Server is running!!!'
@@ -24,7 +24,7 @@ RSpec.describe 'Welcome', type: :request do
     }
 
     it 'returns http success' do
-      get '/companies'
+      get companies_path
 
       expect(response).to have_http_status(:success)
     end
@@ -32,7 +32,7 @@ RSpec.describe 'Welcome', type: :request do
     it 'display all companies' do
       company = Company.create!(companies_attributes)
 
-      get '/companies'
+      get companies_path
 
       response_json = response.parsed_body
       expect(response_json[0]['name']).to eq(company.name)
@@ -41,7 +41,7 @@ RSpec.describe 'Welcome', type: :request do
 
   describe 'GET /softwares' do
     it 'returns http success' do
-      get '/softwares'
+      get softwares_path
 
       expect(response).to have_http_status(:success)
     end
@@ -50,7 +50,7 @@ RSpec.describe 'Welcome', type: :request do
       company = Company.create!(name: 'Company Example', value: 10)
       software = company.softwares.create(name: 'Software Example')
 
-      get '/softwares'
+      get softwares_path
 
       response_json = response.parsed_body
       expect(response_json[0]['company_id']).to eq(company.id)
@@ -62,7 +62,7 @@ RSpec.describe 'Welcome', type: :request do
       software_one = company.softwares.create(name: 'Software Example - 01')
       software_two = company.softwares.create(name: 'Software Example - 02')
 
-      get "/companies/#{company.id}/softwares"
+      get company_softwares_path(company.id)
       response_json = response.parsed_body
       expect(response_json.count).to eq(2)
       expect(response_json[0]['company_id']).to eq(company.id)
@@ -110,11 +110,11 @@ RSpec.describe 'Welcome', type: :request do
       create(:task_item, task: record_task_two)
       create(:task_item, task: record_task_three, status: 'pending')
 
-      get '/dashboard/'
+      get dashboard_path
 
       response_body = response.parsed_body
       expect(response).to have_http_status(:ok)
-      expect(response_body.size).to eq(9)
+      expect(response_body.size).to eq(12)
       expect(response_body['totalCards']).to eq(3)
       expect(response_body['totalHoursCards']).to eq('00:12')
       expect(response_body['totalValueCards']).to eq(2.0)
@@ -124,6 +124,7 @@ RSpec.describe 'Welcome', type: :request do
       expect(response_body['totalCardsOpenedOrReopened']).to eq(1)
       expect(response_body['totalHoursCardsOpenedOrReopened']).to eq('00:04')
       expect(response_body['totalValueCardsOpenedOrReopened']).to eq(0.67)
+      expect(response_body['totalValueCardsDelivered']).to be_a(Float)
     end
   end
 end
