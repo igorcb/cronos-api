@@ -38,3 +38,9 @@ Este projeto é licenciado sob a [inserir licença aqui]. Consulte o arquivo LIC
 
 Autor
 [Seu nome ou nome de sua equipe]
+
+## Desenvolvimento local (i4local + infra-db)
+
+1. Suba o Postgres central: `cd ~/rails_app/infra-db && docker compose up -d` (rede `db-shared`, host `pg`, banco `cronos_development`).
+2. `docker compose up -d` neste repositório (redis, web na 4001 e worker; o compose não tem mais banco próprio).
+3. API em http://cronos-api.i4local (Caddy → 4001); front em http://cronos.i4local.

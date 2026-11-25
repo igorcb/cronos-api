@@ -1,20 +1,4 @@
 services:
-  db:
-    container_name: cronos-api_db
-    image: postgres:15
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5434:5432"
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   redis:
     container_name: cronos-api_redis
     image: redis:7.0.7
@@ -22,7 +6,7 @@ services:
     volumes:
       - redis-data:/data
     ports:
-      - "6380:6379"
+      - "6381:6379"
 
   web:
     container_name: cronos-api_web
@@ -36,13 +20,16 @@ services:
       - BUNDLE_PATH=/app/vendor/bundle
       - RAILS_MASTER_KEY=555a0dd81a9edb883545ccf6d7e168b7
       - REDIS_URL=redis://redis:6379/1
+      # Banco no Postgres central de dev (infra-db): host pg, rede db-shared
+      - DATABASE_URL=postgres://postgres:postgres@pg:5432/cronos_development
     ports:
       - "4001:4001"
     depends_on:
-      db:
-        condition: service_healthy
       redis:
         condition: service_started
+    networks:
+      - default
+      - db-shared
     stdin_open: true
     tty: true
 
@@ -58,14 +45,20 @@ services:
       - BUNDLE_PATH=/app/vendor/bundle
       - RAILS_MASTER_KEY=555a0dd81a9edb883545ccf6d7e168b7
       - REDIS_URL=redis://redis:6379/1
+      # Banco no Postgres central de dev (infra-db): host pg, rede db-shared
+      - DATABASE_URL=postgres://postgres:postgres@pg:5432/cronos_development
     depends_on:
-      db:
-        condition: service_healthy
       redis:
         condition: service_started
+    networks:
+      - default
+      - db-shared
     stdin_open: true
     tty: true
 
 volumes:
-  postgres_data:
   redis-data:
+
+networks:
+  db-shared:
+    external: true
